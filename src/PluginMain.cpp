@@ -12,6 +12,7 @@
 #include "GameDetectorDock.h"
 #include "PlatformManager.h"
 #include "TwitchAuthManager.h"
+#include "SmartContextManager.h"
 
 static obs_hotkey_id g_set_game_hotkey_id;
 static obs_hotkey_id g_rescan_games_hotkey_id;
@@ -178,6 +179,7 @@ void obs_module_unload(void)
 	obs_hotkey_unregister(g_rescan_games_hotkey_id);
 	obs_hotkey_unregister(g_set_just_chatting_hotkey_id);
 
+	SmartContextManager::get().stop();
 	GameDetector::get().stopScanning();
 	TwitchAuthManager::get().shutdown();
 	PlatformManager::get().shutdown();

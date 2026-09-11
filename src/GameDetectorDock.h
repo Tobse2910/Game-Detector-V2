@@ -32,11 +32,26 @@ private:
 	QCheckBox *autoExecuteCheckbox = nullptr;
 	QTimer *cooldownUpdateTimer = nullptr;
 
+	// Smart Context Mode (added by the kicodebyts fork)
+	QCheckBox *smartContextCheckbox = nullptr;
+	QCheckBox *lockCategoryCheckbox = nullptr;
+	QComboBox *smartDelayCombo = nullptr;
+	QLabel *smartAppValueLabel = nullptr;
+	QLabel *smartContextValueLabel = nullptr;
+	QLabel *smartActiveSinceValueLabel = nullptr;
+	QLabel *smartSwitchInValueLabel = nullptr;
+	QLabel *smartCategoryValueLabel = nullptr;
+	QComboBox *manualCategoryCombo = nullptr;
+	QPushButton *manualApplyButton = nullptr;
+	QPushButton *applyNowButton = nullptr;
+	QPushButton *resetTimerButton = nullptr;
+
 	QString configPath;
 	QString detectedGameName;
 	QString desiredCategory = "Just Chatting";
 	QString desiredTitle = QString();
 	QString lastTwitchTitle = QString();
+	QString lastTwitchCategory = QString();
 	QString lastTrovoTitle = QString();
 
 	void restoreStatusLabel();
@@ -44,6 +59,10 @@ private:
 	void onCooldownStarted(int seconds);
 	void onCooldownFinished();
 	void updateCooldownLabel();
+
+	void buildSmartContextUi(QVBoxLayout *mainLayout);
+	void applySmartContextMode();
+	void refreshManualCategoryCombo();
 
 	QTimer *saveDelayTimer = nullptr;
 	QTimer *statusCheckTimer = nullptr;
@@ -68,6 +87,15 @@ private slots:
 	void onSettingsButtonClicked();
 	void checkWarningsAndStatus();
 	void onCategoriesFetched(const QHash<QString, QString> &categories);
+
+	void onSmartContextToggled(bool enabled);
+	void onLockCategoryToggled(bool locked);
+	void onSmartDelayChanged(int index);
+	void onSmartContextStatusUpdated();
+	void onSmartContextApplied(const QString &category, const QString &title);
+	void onManualApplyClicked();
+	void onApplyNowClicked();
+	void onResetTimerClicked();
 };
 
 #endif // GAMEDETECTORDOCK_H

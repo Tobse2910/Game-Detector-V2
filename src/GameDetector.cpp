@@ -822,3 +822,15 @@ bool GameDetector::isGameListEmpty() const
 {
 	return knownGameExes.isEmpty();
 }
+
+QString GameDetector::getGameNameForExe(const QString &exeName) const
+{
+	if (exeName.isEmpty())
+		return QString();
+
+	for (auto it = gameNameMap.constBegin(); it != gameNameMap.constEnd(); ++it) {
+		if (it.key().compare(exeName, Qt::CaseInsensitive) == 0)
+			return it.value();
+	}
+	return QString();
+}

@@ -5,6 +5,7 @@
 #include "ConfigManager.h"
 #include "GameDetectorSettingsDialog.h"
 #include "TrovoAuthManager.h"
+#include "SmartContextManager.h"
 
 #include <QComboBox>
 #include <QFrame>
@@ -108,6 +109,8 @@ GameDetectorDock::GameDetectorDock(QWidget *parent) : QWidget(parent)
 	executionLayout->addRow(setJustChattingButton);
 
 	mainLayout->addLayout(executionLayout);
+
+	buildSmartContextUi(mainLayout);
 
 	connect(executeCommandButton, &QPushButton::clicked, this, &GameDetectorDock::onExecuteCommandClicked);
 	connect(manualGameButton, &QPushButton::clicked, this, [this]() {
@@ -275,6 +278,272 @@ GameDetectorDock::GameDetectorDock(QWidget *parent) : QWidget(parent)
 	setLayout(mainLayout);
 }
 
+void GameDetectorDock::buildSmartContextUi(QVBoxLayout *mainLayout)
+{
+	QGroupBox *smartGroup = new QGroupBox(obs_module_text("SmartContext.GroupTitle"));
+	QVBoxLayout *smartLayout = new QVBoxLayout();
+
+	smartContextCheckbox = new QCheckBox(obs_module_text("SmartContext.Enable"));
+	smartContextCheckbox->setToolTip(obs_module_text("SmartContext.Enable.Tooltip"));
+	smartLayout->addWidget(smartContextCheckbox);
+
+	lockCategoryCheckbox = new QCheckBox(obs_module_text("SmartContext.Lock"));
+	lockCategoryCheckbox->setToolTip(obs_module_text("SmartContext.Lock.Tooltip"));
+	smartLayout->addWidget(lockCategoryCheckbox);
+
+	QHBoxLayout *delayLayout = new QHBoxLayout();
+	delayLayout->addWidget(new QLabel(obs_module_text("SmartContext.DelayLabel")));
+	smartDelayCombo = new QComboBox();
+	smartDelayCombo->addItem(obs_module_text("SmartContext.Delay.30s"), 30);
+	smartDelayCombo->addItem(obs_module_text("SmartContext.Delay.1m"), 60);
+	smartDelayCombo->addItem(obs_module_text("SmartContext.Delay.2m"), 120);
+	smartDelayCombo->addItem(obs_module_text("SmartContext.Delay.5m"), 300);
+	smartDelayCombo->addItem(obs_module_text("SmartContext.Delay.10m"), 600);
+	delayLayout->addWidget(smartDelayCombo, 1);
+	smartLayout->addLayout(delayLayout);
+
+	QFormLayout *statusForm = new QFormLayout();
+	statusForm->setLabelAlignment(Qt::AlignLeft);
+	statusForm->setContentsMargins(0, 6, 0, 0);
+
+	auto makeValueLabel = [this]() {
+		QLabel *label = new QLabel("-", this);
+		label->setWordWrap(true);
+		label->setStyleSheet("font-weight: bold;");
+		return label;
+	};
+
+	smartAppValueLabel = makeValueLabel();
+	smartContextValueLabel = makeValueLabel();
+	smartActiveSinceValueLabel = makeValueLabel();
+	smartSwitchInValueLabel = makeValueLabel();
+	smartCategoryValueLabel = makeValueLabel();
+
+	statusForm->addRow(obs_module_text("SmartContext.Status.ActiveApp"), smartAppValueLabel);
+	statusForm->addRow(obs_module_text("SmartContext.Status.Context"), smartContextValueLabel);
+	statusForm->addRow(obs_module_text("SmartContext.Status.ActiveSince"), smartActiveSinceValueLabel);
+	statusForm->addRow(obs_module_text("SmartContext.Status.SwitchIn"), smartSwitchInValueLabel);
+	statusForm->addRow(obs_module_text("SmartContext.Status.CurrentCategory"), smartCategoryValueLabel);
+
+	smartLayout->addLayout(statusForm);
+
+	// Manual override, so the automatic decision can always be taken over by hand.
+	QFrame *manualSeparator = new QFrame();
+	manualSeparator->setFrameShape(QFrame::HLine);
+	manualSeparator->setFrameShadow(QFrame::Sunken);
+	smartLayout->addWidget(manualSeparator);
+
+	QLabel *manualHeader = new QLabel(obs_module_text("SmartContext.Manual.Header"));
+	manualHeader->setStyleSheet("font-weight: bold; margin-top: 2px;");
+	smartLayout->addWidget(manualHeader);
+
+	QHBoxLayout *manualCategoryLayout = new QHBoxLayout();
+	manualCategoryCombo = new QComboBox();
+	manualCategoryCombo->setEditable(true);
+	manualCategoryCombo->setInsertPolicy(QComboBox::NoInsert);
+	manualCategoryCombo->setToolTip(obs_module_text("SmartContext.Manual.Category.Tooltip"));
+	manualCategoryCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+	manualCategoryLayout->addWidget(manualCategoryCombo, 1);
+
+	manualApplyButton = new QPushButton(obs_module_text("SmartContext.Manual.Apply"));
+	manualApplyButton->setCursor(Qt::PointingHandCursor);
+	manualApplyButton->setToolTip(obs_module_text("SmartContext.Manual.Apply.Tooltip"));
+	manualCategoryLayout->addWidget(manualApplyButton);
+	smartLayout->addLayout(manualCategoryLayout);
+
+	QHBoxLayout *manualButtonsLayout = new QHBoxLayout();
+	applyNowButton = new QPushButton(obs_module_text("SmartContext.Manual.ApplyNow"));
+	applyNowButton->setCursor(Qt::PointingHandCursor);
+	applyNowButton->setToolTip(obs_module_text("SmartContext.Manual.ApplyNow.Tooltip"));
+	manualButtonsLayout->addWidget(applyNowButton);
+
+	resetTimerButton = new QPushButton(obs_module_text("SmartContext.Manual.Reset"));
+	resetTimerButton->setCursor(Qt::PointingHandCursor);
+	resetTimerButton->setToolTip(obs_module_text("SmartContext.Manual.Reset.Tooltip"));
+	manualButtonsLayout->addWidget(resetTimerButton);
+	smartLayout->addLayout(manualButtonsLayout);
+
+	smartGroup->setLayout(smartLayout);
+	mainLayout->addWidget(smartGroup);
+
+	connect(smartContextCheckbox, &QCheckBox::toggled, this, &GameDetectorDock::onSmartContextToggled);
+	connect(lockCategoryCheckbox, &QCheckBox::toggled, this, &GameDetectorDock::onLockCategoryToggled);
+	connect(smartDelayCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+		&GameDetectorDock::onSmartDelayChanged);
+
+	connect(manualApplyButton, &QPushButton::clicked, this, &GameDetectorDock::onManualApplyClicked);
+	connect(applyNowButton, &QPushButton::clicked, this, &GameDetectorDock::onApplyNowClicked);
+	connect(resetTimerButton, &QPushButton::clicked, this, &GameDetectorDock::onResetTimerClicked);
+
+	connect(&SmartContextManager::get(), &SmartContextManager::statusUpdated, this,
+		&GameDetectorDock::onSmartContextStatusUpdated);
+	connect(&SmartContextManager::get(), &SmartContextManager::contextApplied, this,
+		&GameDetectorDock::onSmartContextApplied);
+}
+
+void GameDetectorDock::refreshManualCategoryCombo()
+{
+	if (!manualCategoryCombo)
+		return;
+
+	const QString previous = manualCategoryCombo->currentText();
+
+	manualCategoryCombo->blockSignals(true);
+	manualCategoryCombo->clear();
+
+	// Every category the rules can produce, each carrying its title template so a
+	// manual switch sets the same title the automatic one would have set.
+	QStringList seen;
+	for (const SmartContextRule &rule : SmartContextManager::get().currentRules()) {
+		if (rule.ignore || rule.category.isEmpty() || seen.contains(rule.category, Qt::CaseInsensitive))
+			continue;
+		seen << rule.category;
+		manualCategoryCombo->addItem(rule.category, rule.titleTemplate);
+	}
+
+	if (!seen.contains("Just Chatting", Qt::CaseInsensitive))
+		manualCategoryCombo->addItem("Just Chatting", QString());
+
+	if (!previous.isEmpty()) {
+		int index = manualCategoryCombo->findText(previous, Qt::MatchFixedString);
+		if (index >= 0)
+			manualCategoryCombo->setCurrentIndex(index);
+		else
+			manualCategoryCombo->setCurrentText(previous);
+	}
+
+	manualCategoryCombo->blockSignals(false);
+}
+
+void GameDetectorDock::onManualApplyClicked()
+{
+	const QString category = manualCategoryCombo->currentText().trimmed();
+	if (category.isEmpty())
+		return;
+
+	// Only reuse the stored template when the text still matches a known rule;
+	// a freely typed category gets no title.
+	QString titleTemplate;
+	int index = manualCategoryCombo->findText(category, Qt::MatchFixedString);
+	if (index >= 0)
+		titleTemplate = manualCategoryCombo->itemData(index).toString();
+
+	if (!SmartContextManager::get().applyCategoryManually(category, titleTemplate))
+		statusLabel->setText(obs_module_text("SmartContext.Manual.Blocked"));
+}
+
+void GameDetectorDock::onApplyNowClicked()
+{
+	if (!SmartContextManager::get().applyPendingNow())
+		statusLabel->setText(obs_module_text("SmartContext.Manual.Blocked"));
+}
+
+void GameDetectorDock::onResetTimerClicked()
+{
+	SmartContextManager::get().resetPending();
+	statusLabel->setText(obs_module_text("SmartContext.Manual.ResetDone"));
+	QTimer::singleShot(2000, this, &GameDetectorDock::restoreStatusLabel);
+}
+
+void GameDetectorDock::onSmartContextToggled(bool enabled)
+{
+	ConfigManager::get().setSmartContextEnabled(enabled);
+	ConfigManager::get().save(ConfigManager::get().getSettings());
+	applySmartContextMode();
+}
+
+void GameDetectorDock::onLockCategoryToggled(bool locked)
+{
+	ConfigManager::get().setSmartContextLock(locked);
+	ConfigManager::get().save(ConfigManager::get().getSettings());
+	onSmartContextStatusUpdated();
+}
+
+void GameDetectorDock::onSmartDelayChanged(int index)
+{
+	Q_UNUSED(index);
+	ConfigManager::get().setSmartContextDelay(smartDelayCombo->currentData().toInt());
+	ConfigManager::get().save(ConfigManager::get().getSettings());
+	SmartContextManager::get().reloadSettings();
+}
+
+void GameDetectorDock::applySmartContextMode()
+{
+	if (ConfigManager::get().getSmartContextEnabled())
+		SmartContextManager::get().start();
+	else
+		SmartContextManager::get().stop();
+
+	refreshManualCategoryCombo();
+	onSmartContextStatusUpdated();
+}
+
+void GameDetectorDock::onSmartContextStatusUpdated()
+{
+	if (!smartAppValueLabel)
+		return;
+
+	const bool enabled = ConfigManager::get().getSmartContextEnabled();
+	SmartContextManager &smart = SmartContextManager::get();
+
+	smartCategoryValueLabel->setText(lastTwitchCategory.isEmpty() ? QString("-") : lastTwitchCategory);
+
+	// "Switch now" only means something while a switch is actually pending. The
+	// other manual controls stay usable even with Smart Context Mode off.
+	const bool pending = enabled && smart.hasPendingContext();
+	applyNowButton->setEnabled(pending);
+	resetTimerButton->setEnabled(pending);
+	if (pending)
+		applyNowButton->setText(
+			QString(obs_module_text("SmartContext.Manual.ApplyNow.Pending")).arg(smart.pendingCategory()));
+	else
+		applyNowButton->setText(obs_module_text("SmartContext.Manual.ApplyNow"));
+
+	if (!enabled) {
+		const QString off = obs_module_text("SmartContext.Status.Off");
+		smartAppValueLabel->setText(off);
+		smartContextValueLabel->setText(off);
+		smartActiveSinceValueLabel->setText("-");
+		smartSwitchInValueLabel->setText("-");
+		return;
+	}
+
+	const QString process = smart.activeProcess();
+	smartAppValueLabel->setText(process.isEmpty() ? QString("-") : process);
+
+	if (smart.contextIsIgnored()) {
+		smartContextValueLabel->setText(obs_module_text("SmartContext.Status.Ignored"));
+	} else {
+		const QString context = smart.detectedContext();
+		smartContextValueLabel->setText(context.isEmpty() ? QString("-") : context);
+	}
+
+	smartActiveSinceValueLabel->setText(QTime(0, 0).addSecs(smart.activeForSeconds()).toString("mm:ss"));
+
+	if (ConfigManager::get().getSmartContextLock()) {
+		smartSwitchInValueLabel->setText(obs_module_text("SmartContext.Status.Locked"));
+		return;
+	}
+
+	const int untilSwitch = smart.secondsUntilSwitch();
+	if (untilSwitch < 0)
+		smartSwitchInValueLabel->setText("-");
+	else
+		smartSwitchInValueLabel->setText(QTime(0, 0).addSecs(untilSwitch).toString("mm:ss"));
+}
+
+void GameDetectorDock::onSmartContextApplied(const QString &category, const QString &title)
+{
+	// Keep the rest of the dock in sync so the manual buttons and the periodic
+	// auto-update do not fight the Smart Context decision.
+	this->desiredCategory = category;
+	if (!title.isEmpty())
+		this->desiredTitle = title;
+
+	statusLabel->setText(QString(obs_module_text("SmartContext.Applied")).arg(category));
+	QTimer::singleShot(4000, this, &GameDetectorDock::restoreStatusLabel);
+}
+
 void GameDetectorDock::saveDockSettings()
 {
 	obs_data_t *settings = ConfigManager::get().getSettings();
@@ -295,14 +564,18 @@ void GameDetectorDock::onSettingsChanged()
 void GameDetectorDock::onGameDetected(const QString &gameName)
 {
 	this->detectedGameName = gameName;
-	this->desiredCategory = gameName;
+	// In Smart Context Mode a merely running game must not claim the category;
+	// only the foreground window decides. The manual buttons still use it.
+	if (!ConfigManager::get().getSmartContextEnabled())
+		this->desiredCategory = gameName;
 	checkWarningsAndStatus();
 }
 
 void GameDetectorDock::onNoGameDetected()
 {
 	this->detectedGameName = "Just Chatting";
-	this->desiredCategory = "Just Chatting";
+	if (!ConfigManager::get().getSmartContextEnabled())
+		this->desiredCategory = "Just Chatting";
 	checkWarningsAndStatus();
 }
 
@@ -330,6 +603,21 @@ void GameDetectorDock::loadSettingsFromConfig()
 	autoExecuteCheckbox->setChecked(ConfigManager::get().getExecuteAutomatically());
 	autoExecuteCheckbox->blockSignals(false);
 	updateAutoExecuteCheckboxText();
+
+	smartContextCheckbox->blockSignals(true);
+	smartContextCheckbox->setChecked(ConfigManager::get().getSmartContextEnabled());
+	smartContextCheckbox->blockSignals(false);
+
+	lockCategoryCheckbox->blockSignals(true);
+	lockCategoryCheckbox->setChecked(ConfigManager::get().getSmartContextLock());
+	lockCategoryCheckbox->blockSignals(false);
+
+	smartDelayCombo->blockSignals(true);
+	int delayIndex = smartDelayCombo->findData(ConfigManager::get().getSmartContextDelay());
+	smartDelayCombo->setCurrentIndex(delayIndex >= 0 ? delayIndex : smartDelayCombo->findData(300));
+	smartDelayCombo->blockSignals(false);
+
+	applySmartContextMode();
 	checkWarningsAndStatus();
 }
 
@@ -373,6 +661,8 @@ void GameDetectorDock::onCategoriesFetched(const QHash<QString, QString> &catego
 		twitchStatusLabel->setText(QString(obs_module_text("Dock.Platform.Category")).arg(category));
 		// store last known title for prefill
 		this->lastTwitchTitle = title.trimmed();
+		this->lastTwitchCategory = category;
+		onSmartContextStatusUpdated();
 		if (title.isEmpty()) {
 			twitchTitleLabel->setText("");
 			twitchTitleLabel->setVisible(false);
@@ -445,7 +735,11 @@ void GameDetectorDock::checkWarningsAndStatus()
 
 	bool onlyWhileStreaming = ConfigManager::get().getBlockAutoUpdateWhileStreaming();
 	bool shouldAutoUpdateNow = !onlyWhileStreaming || obs_frontend_streaming_active();
-	if (autoExecuteCheckbox->isChecked() && shouldAutoUpdateNow) {
+	// A locked category blocks every automatic change, and while Smart Context
+	// Mode is on it is the only thing allowed to push a category automatically.
+	bool automationBlocked =
+		ConfigManager::get().getSmartContextLock() || ConfigManager::get().getSmartContextEnabled();
+	if (autoExecuteCheckbox->isChecked() && shouldAutoUpdateNow && !automationBlocked) {
 		PlatformManager::get().updateCategory(desiredCategory);
 	}
 
@@ -514,6 +808,9 @@ void GameDetectorDock::onSettingsButtonClicked()
 {
 	GameDetectorSettingsDialog dialog(this);
 	dialog.exec();
+
+	// The rule list may have changed while the dialog was open.
+	refreshManualCategoryCombo();
 }
 
 void GameDetectorDock::onAuthenticationRequired()

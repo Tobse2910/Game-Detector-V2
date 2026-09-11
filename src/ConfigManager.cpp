@@ -35,6 +35,16 @@ void ConfigManager::load()
 		obs_data_set_string(settings, TWITCH_CHANNEL_LOGIN_KEY, "");
 		obs_data_set_int(settings, ACTION_DELAY_KEY, 30);
 
+		obs_data_set_bool(settings, SMART_CONTEXT_ENABLED_KEY, false);
+		obs_data_set_bool(settings, SMART_CONTEXT_LOCK_KEY, false);
+		obs_data_set_int(settings, SMART_CONTEXT_DELAY_KEY, 300);
+		obs_data_set_int(settings, SMART_CONTEXT_COOLDOWN_KEY, 60);
+		obs_data_set_int(settings, SMART_CONTEXT_GRACE_KEY, 60);
+
+		obs_data_array_t *default_rules = createDefaultSmartContextRules();
+		obs_data_set_array(settings, SMART_CONTEXT_RULES_KEY, default_rules);
+		obs_data_array_release(default_rules);
+
 		obs_data_array_t *empty_array = obs_data_array_create();
 		obs_data_set_array(settings, MANUAL_GAMES_KEY, empty_array);
 		obs_data_array_release(empty_array);
@@ -112,6 +122,27 @@ void ConfigManager::load()
 
 	if (!obs_data_has_user_value(settings, ACTION_DELAY_KEY))
 		obs_data_set_int(settings, ACTION_DELAY_KEY, 30);
+
+	if (!obs_data_has_user_value(settings, SMART_CONTEXT_ENABLED_KEY))
+		obs_data_set_bool(settings, SMART_CONTEXT_ENABLED_KEY, false);
+
+	if (!obs_data_has_user_value(settings, SMART_CONTEXT_LOCK_KEY))
+		obs_data_set_bool(settings, SMART_CONTEXT_LOCK_KEY, false);
+
+	if (!obs_data_has_user_value(settings, SMART_CONTEXT_DELAY_KEY))
+		obs_data_set_int(settings, SMART_CONTEXT_DELAY_KEY, 300);
+
+	if (!obs_data_has_user_value(settings, SMART_CONTEXT_COOLDOWN_KEY))
+		obs_data_set_int(settings, SMART_CONTEXT_COOLDOWN_KEY, 60);
+
+	if (!obs_data_has_user_value(settings, SMART_CONTEXT_GRACE_KEY))
+		obs_data_set_int(settings, SMART_CONTEXT_GRACE_KEY, 60);
+
+	if (!obs_data_has_user_value(settings, SMART_CONTEXT_RULES_KEY)) {
+		obs_data_array_t *default_rules = createDefaultSmartContextRules();
+		obs_data_set_array(settings, SMART_CONTEXT_RULES_KEY, default_rules);
+		obs_data_array_release(default_rules);
+	}
 
 	if (!obs_data_has_user_value(settings, MANUAL_GAMES_KEY)) {
 		obs_data_array_t *empty_array = obs_data_array_create();
@@ -412,4 +443,160 @@ void ConfigManager::setTwitchChannelLogin(const QString &value)
 	if (!settings)
 		return;
 	obs_data_set_string(settings, TWITCH_CHANNEL_LOGIN_KEY, value.toUtf8().constData());
+}
+
+/* ------------------------------------------------------------------------ *
+ * Smart Context Mode (added by the kicodebyts fork)
+ * ------------------------------------------------------------------------ */
+
+bool ConfigManager::getSmartContextEnabled() const
+{
+	if (!settings)
+		return false;
+	return obs_data_get_bool(settings, SMART_CONTEXT_ENABLED_KEY);
+}
+
+void ConfigManager::setSmartContextEnabled(bool value)
+{
+	if (!settings)
+		return;
+	obs_data_set_bool(settings, SMART_CONTEXT_ENABLED_KEY, value);
+}
+
+bool ConfigManager::getSmartContextLock() const
+{
+	if (!settings)
+		return false;
+	return obs_data_get_bool(settings, SMART_CONTEXT_LOCK_KEY);
+}
+
+void ConfigManager::setSmartContextLock(bool value)
+{
+	if (!settings)
+		return;
+	obs_data_set_bool(settings, SMART_CONTEXT_LOCK_KEY, value);
+}
+
+int ConfigManager::getSmartContextDelay() const
+{
+	if (!settings)
+		return 300;
+	int value = (int)obs_data_get_int(settings, SMART_CONTEXT_DELAY_KEY);
+	return value > 0 ? value : 300;
+}
+
+void ConfigManager::setSmartContextDelay(int seconds)
+{
+	if (!settings)
+		return;
+	obs_data_set_int(settings, SMART_CONTEXT_DELAY_KEY, seconds);
+}
+
+int ConfigManager::getSmartContextSwitchCooldown() const
+{
+	if (!settings)
+		return 60;
+	int value = (int)obs_data_get_int(settings, SMART_CONTEXT_COOLDOWN_KEY);
+	return value >= 0 ? value : 60;
+}
+
+int ConfigManager::getSmartContextGrace() const
+{
+	if (!settings)
+		return 60;
+	int value = (int)obs_data_get_int(settings, SMART_CONTEXT_GRACE_KEY);
+	return value >= 0 ? value : 60;
+}
+
+obs_data_array_t *ConfigManager::getSmartContextRules() const
+{
+	if (!settings)
+		return nullptr;
+	return obs_data_get_array(settings, SMART_CONTEXT_RULES_KEY);
+}
+
+void ConfigManager::saveSmartContextRules(obs_data_array_t *rulesArray)
+{
+	if (!settings)
+		return;
+
+	obs_data_set_array(settings, SMART_CONTEXT_RULES_KEY, rulesArray);
+	save(settings);
+}
+
+namespace {
+obs_data_t *makeRule(const char *process, const char *category, const char *titleTemplate, bool ignore, int priority)
+{
+	obs_data_t *rule = obs_data_create();
+	obs_data_set_bool(rule, "enabled", true);
+	obs_data_set_string(rule, "process", process);
+	obs_data_set_string(rule, "window", "");
+	obs_data_set_string(rule, "category", category);
+	obs_data_set_string(rule, "title_template", titleTemplate);
+	obs_data_set_int(rule, "delay", 0); // 0 = use the global Smart Context delay
+	obs_data_set_bool(rule, "ignore", ignore);
+	obs_data_set_int(rule, "priority", priority);
+	return rule;
+}
+
+void pushRule(obs_data_array_t *array, obs_data_t *rule)
+{
+	obs_data_array_push_back(array, rule);
+	obs_data_release(rule);
+}
+} // namespace
+
+obs_data_array_t *ConfigManager::createDefaultSmartContextRules()
+{
+	obs_data_array_t *rules = obs_data_array_create();
+
+	static const char *const TITLE_CODING = "Coding & Development | !music | !PartyFlow";
+	static const char *const TITLE_CHATTING = "Just Chatting | !music | !wunsch | !PartyFlow";
+	static const char *const CATEGORY_CODING = "Software and Game Development";
+	static const char *const CATEGORY_CHATTING = "Just Chatting";
+
+	// Applications that must never take over the category. Highest priority so
+	// they win over any wildcard rule below.
+	static const char *const ignored[] = {"discord.exe",
+					      "discordptb.exe",
+					      "obs64.exe",
+					      "obs32.exe",
+					      "explorer.exe",
+					      "WaveLink.exe",
+					      "Elgato Wave Link.exe",
+					      "StreamDeck.exe",
+					      "Spotify.exe",
+					      "steam.exe",
+					      "steamwebhelper.exe",
+					      "EpicGamesLauncher.exe",
+					      "Launcher.exe", // Rockstar Games Launcher
+					      "RockstarService.exe",
+					      "SocialClubHelper.exe"};
+	for (const char *process : ignored)
+		pushRule(rules, makeRule(process, "", "", true, 90));
+
+	// Games / explicit category rules.
+	pushRule(rules, makeRule("WARDOGS.exe", "WARDOGS", "WARDOGS | !music | Web Ansicht: !wunsch | !PartyFlow",
+				 false, 50));
+	pushRule(rules, makeRule("FiveM.exe", "Grand Theft Auto V",
+				 "BSG RP | Boris Brown | !music | !wunsch | !PartyFlow", false, 50));
+	pushRule(rules, makeRule("FiveM_*.exe", "Grand Theft Auto V",
+				 "BSG RP | Boris Brown | !music | !wunsch | !PartyFlow", false, 50));
+
+	// Development tools.
+	pushRule(rules, makeRule("Code.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
+	pushRule(rules, makeRule("Code - Insiders.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
+	pushRule(rules, makeRule("devenv.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
+	pushRule(rules, makeRule("idea64.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
+	pushRule(rules, makeRule("pycharm64.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
+	pushRule(rules, makeRule("webstorm64.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
+	pushRule(rules, makeRule("rider64.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
+	pushRule(rules, makeRule("studio64.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
+
+	// Browsers.
+	pushRule(rules, makeRule("firefox.exe", CATEGORY_CHATTING, TITLE_CHATTING, false, 10));
+	pushRule(rules, makeRule("chrome.exe", CATEGORY_CHATTING, TITLE_CHATTING, false, 10));
+	pushRule(rules, makeRule("msedge.exe", CATEGORY_CHATTING, TITLE_CHATTING, false, 10));
+
+	return rules;
 }

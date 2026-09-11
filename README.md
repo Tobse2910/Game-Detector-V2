@@ -32,3 +32,16 @@ Checkout the [WIKI Page](../../wiki)
 
 Developed by **Fábio F. Magalhães (FabioZumbi12)**.  
 Contributions and PRs are welcome!
+
+---
+
+## 🧠 Smart Context Mode (fork)
+
+This branch is a modified version that adds **Smart Context Mode**: instead of only
+detecting *that* a game is running, it evaluates the Windows **foreground window** to
+detect which application you are actually using, and switches the Twitch category and
+stream title only after that application has been in front for a configurable time
+(default 5 minutes), with anti-flapping and a category lock.
+
+See [FORK-CHANGES.md](FORK-CHANGES.md) for the full list of changes. The original
+GPL-2.0 license and all upstream credits are preserved.

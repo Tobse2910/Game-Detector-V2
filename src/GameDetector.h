@@ -49,6 +49,9 @@ public:
 	void onSettingsChanged();
 	void setupPeriodicScan();
 	bool isGameListEmpty() const;
+	// Case-insensitive lookup of an executable in the configured game list.
+	// Returns an empty string when the executable is not a known game.
+	QString getGameNameForExe(const QString &exeName) const;
 	void mergeAndSaveGames(const QList<std::tuple<QString, QString, QString>> &foundGames);
 
 signals:

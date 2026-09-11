@@ -24,6 +24,7 @@ public:
 
 private:
 	QPushButton *manageGamesButton = nullptr;
+	QPushButton *manageSmartContextRulesButton = nullptr;
 	QPushButton *authButton = nullptr;
 	QPushButton *disconnectButton = nullptr;
 	QPushButton *trovoAuthButton = nullptr;
@@ -54,6 +55,7 @@ private slots:
 	void onDisconnectClicked();
 	void onTrovoDisconnectClicked();
 	void onManageGamesClicked();
+	void onManageSmartContextRulesClicked();
 };
 
 #endif // GAMEDETECTORSETTINGSDIALOG_H

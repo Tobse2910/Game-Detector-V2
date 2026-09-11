@@ -6,6 +6,7 @@
 #include "TwitchAuthManager.h"
 #include "TrovoAuthManager.h"
 #include "PlatformManager.h"
+#include "SmartContextRulesDialog.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -68,6 +69,10 @@ GameDetectorSettingsDialog::GameDetectorSettingsDialog(QWidget *parent) : QDialo
 
 	manageGamesButton = new QPushButton(obs_module_text("Settings.ManageGames"));
 	scanLayout->addWidget(manageGamesButton);
+
+	manageSmartContextRulesButton = new QPushButton(obs_module_text("SmartContext.ManageRules"));
+	manageSmartContextRulesButton->setToolTip(obs_module_text("SmartContext.ManageRules.Tooltip"));
+	scanLayout->addWidget(manageSmartContextRulesButton);
 
 	scanGroup->setLayout(scanLayout);
 	mainLayout->addWidget(scanGroup);
@@ -174,6 +179,8 @@ GameDetectorSettingsDialog::GameDetectorSettingsDialog(QWidget *parent) : QDialo
 	mainLayout->addLayout(dialogButtonsLayout);
 
 	connect(manageGamesButton, &QPushButton::clicked, this, &GameDetectorSettingsDialog::onManageGamesClicked);
+	connect(manageSmartContextRulesButton, &QPushButton::clicked, this,
+		&GameDetectorSettingsDialog::onManageSmartContextRulesClicked);
 	connect(authButton, &QPushButton::clicked, this, [this]() {
 		TwitchAuthManager::get().startAuthentication(actionComboBox->currentIndex(),
 							     unifiedAuthCheckbox->isChecked() ? 1 : 0);
@@ -374,5 +381,11 @@ void GameDetectorSettingsDialog::onTrovoDisconnectClicked()
 void GameDetectorSettingsDialog::onManageGamesClicked()
 {
 	GameListDialog dialog(this);
+	dialog.exec();
+}
+
+void GameDetectorSettingsDialog::onManageSmartContextRulesClicked()
+{
+	SmartContextRulesDialog dialog(this);
 	dialog.exec();
 }

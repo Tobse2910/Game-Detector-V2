@@ -23,6 +23,13 @@ private:
 	static constexpr const char *TWITCH_UNIFIED_AUTH_KEY = "twitch_unified_auth";
 	static constexpr const char *TWITCH_CHANNEL_LOGIN_KEY = "twitch_channel_login";
 
+	// Smart Context Mode (added by the kicodebyts fork)
+	static constexpr const char *SMART_CONTEXT_ENABLED_KEY = "smart_context_enabled";
+	static constexpr const char *SMART_CONTEXT_LOCK_KEY = "smart_context_lock_category";
+	static constexpr const char *SMART_CONTEXT_DELAY_KEY = "smart_context_delay";
+	static constexpr const char *SMART_CONTEXT_COOLDOWN_KEY = "smart_context_switch_cooldown";
+	static constexpr const char *SMART_CONTEXT_GRACE_KEY = "smart_context_grace";
+
 	obs_data_t *settings = nullptr;
 
 	explicit ConfigManager(QObject *parent = nullptr);
@@ -72,6 +79,19 @@ public:
 	void setTwitchChannelLogin(const QString &value);
 	int getActionDelay() const;
 
+	// Smart Context Mode (added by the kicodebyts fork)
+	bool getSmartContextEnabled() const;
+	void setSmartContextEnabled(bool value);
+	bool getSmartContextLock() const;
+	void setSmartContextLock(bool value);
+	int getSmartContextDelay() const;
+	void setSmartContextDelay(int seconds);
+	int getSmartContextSwitchCooldown() const;
+	int getSmartContextGrace() const;
+	obs_data_array_t *getSmartContextRules() const;
+	void saveSmartContextRules(obs_data_array_t *rulesArray);
+	static obs_data_array_t *createDefaultSmartContextRules();
+
 	static constexpr const char *SCAN_STEAM_KEY = "scan_steam";
 	static constexpr const char *SCAN_EPIC_KEY = "scan_epic";
 	static constexpr const char *SCAN_GOG_KEY = "scan_gog";
@@ -81,6 +101,7 @@ public:
 	static constexpr const char *SCAN_PERIODICALLY_KEY = "scan_periodically";
 	static constexpr const char *SCAN_PERIODICALLY_INTERVAL_KEY = "scan_periodically_interval";
 	static constexpr const char *ACTION_DELAY_KEY = "twitch_action_delay";
+	static constexpr const char *SMART_CONTEXT_RULES_KEY = "smart_context_rules";
 
 signals:
 	void settingsSaved();

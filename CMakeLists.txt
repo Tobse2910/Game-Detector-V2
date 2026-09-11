@@ -120,6 +120,8 @@ target_sources(
     "src/TrovoAuthManager.cpp"
     "src/GameListDialog.cpp"
     "src/TwitchServiceAdapter.cpp"
+    "src/SmartContextManager.cpp"
+    "src/SmartContextRulesDialog.cpp"
     "src/IPlatformService.h"
 )
 
