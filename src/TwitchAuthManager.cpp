@@ -565,6 +565,7 @@ QFuture<TwitchAuthManager::ChannelInfo> TwitchAuthManager::getChannelInfo()
 		const QJsonObject channel = data.first().toObject();
 
 		info.title = channel.value("title").toString();
+		info.login = channel.value("broadcaster_login").toString();
 		info.gameId = channel.value("game_id").toString();
 		info.gameName = channel.value("game_name").toString();
 		info.language = channel.value("broadcaster_language").toString();

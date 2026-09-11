@@ -2,6 +2,7 @@
 #include "ConfigManager.h"
 #include "NetworkCommon.h"
 
+#include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
 #include <QFormLayout>
@@ -12,6 +13,7 @@
 #include <QStandardPaths>
 #include <QTextCursor>
 #include <QTime>
+#include <QUrl>
 #include <QtConcurrent/QtConcurrent>
 #include <obs-module.h>
 
@@ -199,6 +201,24 @@ void StreamInfoPanel::buildUi()
 	missing->setWordWrap(true);
 	missing->setStyleSheet("font-size: 8pt; color: #888888; margin-top: 6px;");
 	layout->addWidget(missing);
+
+	// The two fields Helix has no endpoint for still have to be set somewhere, so at
+	// least the way there is one click. Same page OBS' own dock used to load.
+	dashboardButton = new QPushButton(obs_module_text("StreamInfo.OpenDashboard"), this);
+	dashboardButton->setCursor(Qt::PointingHandCursor);
+	dashboardButton->setToolTip(obs_module_text("StreamInfo.OpenDashboard.Tooltip"));
+	layout->addWidget(dashboardButton);
+
+	connect(dashboardButton, &QPushButton::clicked, this, [this]() {
+		// Without the login the per channel URL cannot be built; the generic
+		// stream manager still lands in the right place after a redirect.
+		const QString url = lastLoaded.login.isEmpty()
+					    ? QString("https://dashboard.twitch.tv/stream-manager")
+					    : QString("https://dashboard.twitch.tv/u/%1/stream-manager/edit-stream-info")
+							      .arg(lastLoaded.login);
+
+		QDesktopServices::openUrl(QUrl(url));
+	});
 
 	// --- Actions ---------------------------------------------------------
 	pendingHint = new QLabel(obs_module_text("StreamInfo.Pending"), this);

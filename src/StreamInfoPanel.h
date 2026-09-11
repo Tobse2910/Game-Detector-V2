@@ -93,6 +93,7 @@ private:
 	QPushButton *applyButton = nullptr;
 	QPushButton *discardButton = nullptr;
 	QPushButton *reloadButton = nullptr;
+	QPushButton *dashboardButton = nullptr;
 	QLabel *statusLabel = nullptr;
 	QLabel *pendingHint = nullptr;
 

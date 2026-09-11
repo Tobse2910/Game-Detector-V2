@@ -28,6 +28,7 @@ public:
 	struct ChannelInfo {
 		bool valid = false;
 		QString title;
+		QString login; // broadcaster_login, for the dashboard link
 		QString gameId;
 		QString gameName;
 		QString language;               // broadcaster_language, e.g. "de"
