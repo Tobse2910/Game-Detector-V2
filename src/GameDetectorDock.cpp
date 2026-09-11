@@ -6,6 +6,7 @@
 #include "GameDetectorSettingsDialog.h"
 #include "TrovoAuthManager.h"
 #include "SmartContextManager.h"
+#include "IgnoredAppsDialog.h"
 
 #include <QComboBox>
 #include <QFrame>
@@ -365,6 +366,11 @@ void GameDetectorDock::buildSmartContextUi(QVBoxLayout *mainLayout)
 	manualButtonsLayout->addWidget(resetTimerButton);
 	smartLayout->addLayout(manualButtonsLayout);
 
+	ignoredAppsButton = new QPushButton(obs_module_text("IgnoredApps.Button"));
+	ignoredAppsButton->setCursor(Qt::PointingHandCursor);
+	ignoredAppsButton->setToolTip(obs_module_text("IgnoredApps.Button.Tooltip"));
+	smartLayout->addWidget(ignoredAppsButton);
+
 	smartGroup->setLayout(smartLayout);
 	mainLayout->addWidget(smartGroup);
 
@@ -376,6 +382,7 @@ void GameDetectorDock::buildSmartContextUi(QVBoxLayout *mainLayout)
 	connect(manualApplyButton, &QPushButton::clicked, this, &GameDetectorDock::onManualApplyClicked);
 	connect(applyNowButton, &QPushButton::clicked, this, &GameDetectorDock::onApplyNowClicked);
 	connect(resetTimerButton, &QPushButton::clicked, this, &GameDetectorDock::onResetTimerClicked);
+	connect(ignoredAppsButton, &QPushButton::clicked, this, &GameDetectorDock::onIgnoredAppsClicked);
 
 	connect(&SmartContextManager::get(), &SmartContextManager::statusUpdated, this,
 		&GameDetectorDock::onSmartContextStatusUpdated);
@@ -438,6 +445,13 @@ void GameDetectorDock::onApplyNowClicked()
 {
 	if (!SmartContextManager::get().applyPendingNow())
 		statusLabel->setText(obs_module_text("SmartContext.Manual.Blocked"));
+}
+
+void GameDetectorDock::onIgnoredAppsClicked()
+{
+	IgnoredAppsDialog dialog(this);
+	if (dialog.exec() == QDialog::Accepted)
+		onSmartContextStatusUpdated();
 }
 
 void GameDetectorDock::onResetTimerClicked()

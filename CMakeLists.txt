@@ -122,6 +122,7 @@ target_sources(
     "src/TwitchServiceAdapter.cpp"
     "src/SmartContextManager.cpp"
     "src/SmartContextRulesDialog.cpp"
+    "src/IgnoredAppsDialog.cpp"
     "src/IPlatformService.h"
 )
 

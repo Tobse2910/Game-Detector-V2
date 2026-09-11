@@ -46,6 +46,7 @@ private:
 	QPushButton *manualApplyButton = nullptr;
 	QPushButton *applyNowButton = nullptr;
 	QPushButton *resetTimerButton = nullptr;
+	QPushButton *ignoredAppsButton = nullptr;
 
 	QString configPath;
 	QString detectedGameName;
@@ -97,6 +98,7 @@ private slots:
 	void onManualApplyClicked();
 	void onApplyNowClicked();
 	void onResetTimerClicked();
+	void onIgnoredAppsClicked();
 };
 
 #endif // GAMEDETECTORDOCK_H
