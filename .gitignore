@@ -37,3 +37,7 @@ install/
 build_*/
 setup/
 .CMakeBuildNumber
+cmake/.CMakeBuildNumber
+
+# Quellordner für Grafiken; die fertigen Bilder liegen in img/
+Bild/

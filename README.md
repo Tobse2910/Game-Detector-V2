@@ -37,6 +37,8 @@ Contributions and PRs are welcome!
 
 ## 🧠 Smart Context Mode (fork)
 
+![Game Detector – Smart Context Mode](img/smart-context-mode.png)
+
 This branch is a modified version that adds **Smart Context Mode**: instead of only
 detecting *that* a game is running, it evaluates the Windows **foreground window** to
 detect which application you are actually using, and switches the Twitch category and
