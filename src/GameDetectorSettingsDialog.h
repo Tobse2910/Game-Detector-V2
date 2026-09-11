@@ -48,6 +48,8 @@ private:
 	QCheckBox *scanOnStartupCheckbox = nullptr;
 	QCheckBox *scanPeriodicallyCheckbox = nullptr;
 	QSpinBox *scanIntervalSpinbox = nullptr;
+	QCheckBox *announceChatCheckbox = nullptr;
+	QLineEdit *announceMessageInput = nullptr;
 
 private slots:
 	void onAuthenticationFinished(bool success, const QString &username);

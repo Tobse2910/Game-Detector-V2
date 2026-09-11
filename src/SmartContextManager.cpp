@@ -94,6 +94,31 @@ SmartContextManager::SmartContextManager(QObject *parent) : QObject(parent)
 	pollTimer = new QTimer(this);
 	pollTimer->setInterval(POLL_INTERVAL_MS);
 	connect(pollTimer, &QTimer::timeout, this, &SmartContextManager::poll);
+
+	// Seed our idea of the live category from what the platform actually reports,
+	// until we have made a decision of our own.
+	connect(&PlatformManager::get(), &PlatformManager::categoriesFetched, this,
+		[this](const QHash<QString, QString> &categories) {
+			if (hasSwitchedOnce || !categories.contains("Twitch"))
+				return;
+
+			const QString data = categories.value("Twitch");
+			const int separator = data.indexOf("|||");
+			const QString category = (separator >= 0 ? data.left(separator) : data).trimmed();
+			if (category.isEmpty() || category == currentAppliedCategory)
+				return;
+
+			blog(LOG_INFO, "[GameDetector/SmartContext] Adopting live category '%s'.",
+			     category.toStdString().c_str());
+			currentAppliedCategory = category;
+			appliedAtMs = QDateTime::currentMSecsSinceEpoch();
+
+			// A pending switch to the category that is already live is pointless.
+			if (candidateCategory.compare(category, Qt::CaseInsensitive) == 0)
+				clearCandidate();
+
+			emit statusUpdated();
+		});
 }
 
 QList<SmartContextRule> SmartContextManager::loadRulesFromConfig()
@@ -149,10 +174,13 @@ void SmartContextManager::start()
 	clearCandidate();
 	parkedProgress.clear();
 
-	// Adopt whatever category is already live so we do not re-send it.
+	// Assume what the platform layer last set, then correct it as soon as the real
+	// category comes back from the platform (see the categoriesFetched handler).
 	currentAppliedCategory = PlatformManager::get().getLastSetCategory();
 	appliedAtMs = QDateTime::currentMSecsSinceEpoch();
 	switchCooldownUntilMs = 0;
+	hasSwitchedOnce = false;
+	PlatformManager::get().fetchCurrentCategories();
 
 	if (!pollTimer->isActive())
 		pollTimer->start();
@@ -353,9 +381,20 @@ bool SmartContextManager::pushCategory(const QString &category, const QString &t
 	currentAppliedCategory = category;
 	appliedAtMs = now;
 	switchCooldownUntilMs = now + switchCooldownMs;
+	hasSwitchedOnce = true;
 
 	clearCandidate();
 	parkedProgress.clear();
+
+	if (ConfigManager::get().getSmartContextAnnounceChat()) {
+		QString announcement = ConfigManager::get().getSmartContextAnnounceMessage().trimmed();
+		if (!announcement.isEmpty()) {
+			announcement.replace("{game}", category);
+			announcement.replace("{category}", category);
+			announcement.replace("{title}", title.isEmpty() ? currentAppliedCategory : title);
+			PlatformManager::get().sendChatAnnouncement(announcement);
+		}
+	}
 
 	emit contextApplied(category, title);
 	return true;

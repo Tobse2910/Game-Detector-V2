@@ -149,6 +149,15 @@ GameDetectorSettingsDialog::GameDetectorSettingsDialog(QWidget *parent) : QDialo
 	delaySpinBox->setSuffix(obs_module_text("Settings.Seconds"));
 	actionLayout->addRow(delayLabel, delaySpinBox);
 
+	announceChatCheckbox = new QCheckBox(obs_module_text("SmartContext.Announce"));
+	announceChatCheckbox->setToolTip(obs_module_text("SmartContext.Announce.Tooltip"));
+	actionLayout->addRow(announceChatCheckbox);
+
+	announceMessageInput = new QLineEdit();
+	announceMessageInput->setPlaceholderText(obs_module_text("SmartContext.Announce.Placeholder"));
+	actionLayout->addRow(obs_module_text("SmartContext.Announce.Message"), announceMessageInput);
+	connect(announceChatCheckbox, &QCheckBox::toggled, announceMessageInput, &QLineEdit::setEnabled);
+
 	connect(actionComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
 		[this](int index) { disconectOnChangeComboBox(index); });
 	connect(unifiedAuthCheckbox, &QCheckBox::checkStateChanged, this, [this](int state) {
@@ -255,6 +264,9 @@ void GameDetectorSettingsDialog::loadSettings()
 	commandInput->setText(ConfigManager::get().getCommand());
 	noGameCommandInput->setText(ConfigManager::get().getNoGameCommand());
 	delaySpinBox->setValue(ConfigManager::get().getActionDelay());
+	announceChatCheckbox->setChecked(ConfigManager::get().getSmartContextAnnounceChat());
+	announceMessageInput->setText(ConfigManager::get().getSmartContextAnnounceMessage());
+	announceMessageInput->setEnabled(announceChatCheckbox->isChecked());
 	updateActionModeUI(actionComboBox->currentIndex());
 
 	scanSteamCheckbox->setChecked(ConfigManager::get().getScanSteam());
@@ -277,6 +289,9 @@ void GameDetectorSettingsDialog::saveSettings()
 	obs_data_set_string(settings, "twitch_command_message", commandInput->text().toStdString().c_str());
 	obs_data_set_string(settings, "twitch_command_no_game", noGameCommandInput->text().toStdString().c_str());
 	obs_data_set_int(settings, ConfigManager::ACTION_DELAY_KEY, delaySpinBox->value());
+	obs_data_set_bool(settings, ConfigManager::SMART_CONTEXT_ANNOUNCE_KEY, announceChatCheckbox->isChecked());
+	obs_data_set_string(settings, ConfigManager::SMART_CONTEXT_ANNOUNCE_MESSAGE_KEY,
+			    announceMessageInput->text().toUtf8().constData());
 
 	obs_data_set_bool(settings, ConfigManager::SCAN_STEAM_KEY, scanSteamCheckbox->isChecked());
 	obs_data_set_bool(settings, ConfigManager::SCAN_EPIC_KEY, scanEpicCheckbox->isChecked());

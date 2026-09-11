@@ -88,6 +88,8 @@ public:
 	void setSmartContextDelay(int seconds);
 	int getSmartContextSwitchCooldown() const;
 	int getSmartContextGrace() const;
+	bool getSmartContextAnnounceChat() const;
+	QString getSmartContextAnnounceMessage() const;
 	obs_data_array_t *getSmartContextRules() const;
 	void saveSmartContextRules(obs_data_array_t *rulesArray);
 	static obs_data_array_t *createDefaultSmartContextRules();
@@ -102,6 +104,8 @@ public:
 	static constexpr const char *SCAN_PERIODICALLY_INTERVAL_KEY = "scan_periodically_interval";
 	static constexpr const char *ACTION_DELAY_KEY = "twitch_action_delay";
 	static constexpr const char *SMART_CONTEXT_RULES_KEY = "smart_context_rules";
+	static constexpr const char *SMART_CONTEXT_ANNOUNCE_KEY = "smart_context_announce_chat";
+	static constexpr const char *SMART_CONTEXT_ANNOUNCE_MESSAGE_KEY = "smart_context_announce_message";
 
 signals:
 	void settingsSaved();

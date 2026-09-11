@@ -110,6 +110,10 @@ private:
 	// The category Smart Context believes is live right now.
 	QString currentAppliedCategory;
 	qint64 appliedAtMs = 0;
+	// Until we have switched once ourselves, trust what the platform reports
+	// instead of assuming. Otherwise a restart schedules a pointless switch to
+	// the category that is already live.
+	bool hasSwitchedOnce = false;
 
 	// The category waiting to become stable.
 	QString candidateCategory;

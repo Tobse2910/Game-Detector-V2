@@ -20,6 +20,10 @@ public:
 	}
 
 	bool sendChatMessage(const QString &message);
+	// Like sendChatMessage(), but not gated by the category cooldown. It announces
+	// a change that was just made rather than being an action of its own, and
+	// updateCategory() starts that cooldown before this could ever run.
+	void sendChatAnnouncement(const QString &message);
 	bool updateCategory(const QString &gameName, const QString &title = QString(), bool force = false);
 	void shutdown();
 	bool isOnCooldown() const;

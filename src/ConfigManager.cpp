@@ -44,6 +44,8 @@ void ConfigManager::load()
 		obs_data_set_int(settings, SMART_CONTEXT_DELAY_KEY, 300);
 		obs_data_set_int(settings, SMART_CONTEXT_COOLDOWN_KEY, 60);
 		obs_data_set_int(settings, SMART_CONTEXT_GRACE_KEY, 60);
+		obs_data_set_bool(settings, SMART_CONTEXT_ANNOUNCE_KEY, false);
+		obs_data_set_string(settings, SMART_CONTEXT_ANNOUNCE_MESSAGE_KEY, "Category changed to {game}");
 
 		obs_data_array_t *default_rules = createDefaultSmartContextRules();
 		obs_data_set_array(settings, SMART_CONTEXT_RULES_KEY, default_rules);
@@ -141,6 +143,12 @@ void ConfigManager::load()
 
 	if (!obs_data_has_user_value(settings, SMART_CONTEXT_GRACE_KEY))
 		obs_data_set_int(settings, SMART_CONTEXT_GRACE_KEY, 60);
+
+	if (!obs_data_has_user_value(settings, SMART_CONTEXT_ANNOUNCE_KEY))
+		obs_data_set_bool(settings, SMART_CONTEXT_ANNOUNCE_KEY, false);
+
+	if (!obs_data_has_user_value(settings, SMART_CONTEXT_ANNOUNCE_MESSAGE_KEY))
+		obs_data_set_string(settings, SMART_CONTEXT_ANNOUNCE_MESSAGE_KEY, "Category changed to {game}");
 
 	if (!obs_data_has_user_value(settings, SMART_CONTEXT_RULES_KEY)) {
 		obs_data_array_t *default_rules = createDefaultSmartContextRules();
@@ -510,6 +518,20 @@ int ConfigManager::getSmartContextGrace() const
 		return 60;
 	int value = (int)obs_data_get_int(settings, SMART_CONTEXT_GRACE_KEY);
 	return value >= 0 ? value : 60;
+}
+
+bool ConfigManager::getSmartContextAnnounceChat() const
+{
+	if (!settings)
+		return false;
+	return obs_data_get_bool(settings, SMART_CONTEXT_ANNOUNCE_KEY);
+}
+
+QString ConfigManager::getSmartContextAnnounceMessage() const
+{
+	if (!settings)
+		return "Category changed to {game}";
+	return QString::fromUtf8(obs_data_get_string(settings, SMART_CONTEXT_ANNOUNCE_MESSAGE_KEY));
 }
 
 obs_data_array_t *ConfigManager::getSmartContextRules() const

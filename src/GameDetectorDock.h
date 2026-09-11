@@ -41,6 +41,7 @@ private:
 	QLabel *smartActiveSinceValueLabel = nullptr;
 	QLabel *smartSwitchInValueLabel = nullptr;
 	QLabel *smartCategoryValueLabel = nullptr;
+	QLabel *smartTitleValueLabel = nullptr;
 	QComboBox *manualCategoryCombo = nullptr;
 	QPushButton *manualApplyButton = nullptr;
 	QPushButton *applyNowButton = nullptr;

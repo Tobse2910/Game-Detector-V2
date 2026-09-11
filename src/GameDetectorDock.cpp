@@ -318,12 +318,14 @@ void GameDetectorDock::buildSmartContextUi(QVBoxLayout *mainLayout)
 	smartActiveSinceValueLabel = makeValueLabel();
 	smartSwitchInValueLabel = makeValueLabel();
 	smartCategoryValueLabel = makeValueLabel();
+	smartTitleValueLabel = makeValueLabel();
 
 	statusForm->addRow(obs_module_text("SmartContext.Status.ActiveApp"), smartAppValueLabel);
 	statusForm->addRow(obs_module_text("SmartContext.Status.Context"), smartContextValueLabel);
 	statusForm->addRow(obs_module_text("SmartContext.Status.ActiveSince"), smartActiveSinceValueLabel);
 	statusForm->addRow(obs_module_text("SmartContext.Status.SwitchIn"), smartSwitchInValueLabel);
 	statusForm->addRow(obs_module_text("SmartContext.Status.CurrentCategory"), smartCategoryValueLabel);
+	statusForm->addRow(obs_module_text("SmartContext.Status.CurrentTitle"), smartTitleValueLabel);
 
 	smartLayout->addLayout(statusForm);
 
@@ -487,6 +489,7 @@ void GameDetectorDock::onSmartContextStatusUpdated()
 	SmartContextManager &smart = SmartContextManager::get();
 
 	smartCategoryValueLabel->setText(lastTwitchCategory.isEmpty() ? QString("-") : lastTwitchCategory);
+	smartTitleValueLabel->setText(lastTwitchTitle.isEmpty() ? QString("-") : lastTwitchTitle);
 
 	// "Switch now" only means something while a switch is actually pending. The
 	// other manual controls stay usable even with Smart Context Mode off.

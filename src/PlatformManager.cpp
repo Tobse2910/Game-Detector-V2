@@ -98,6 +98,20 @@ bool PlatformManager::sendChatMessage(const QString &message)
 	return true;
 }
 
+void PlatformManager::sendChatAnnouncement(const QString &message)
+{
+	if (message.isEmpty())
+		return;
+
+	blog(LOG_INFO, "[GameDetector/PlatformManager] Announcing in chat: %s", message.toStdString().c_str());
+
+	auto services = findChildren<IPlatformService *>();
+	for (auto service : services) {
+		if (service->isAuthenticated())
+			service->sendChatMessage(message);
+	}
+}
+
 bool PlatformManager::updateCategory(const QString &gameName, const QString &title, bool force)
 {
 	if (isOnCooldown()) {
