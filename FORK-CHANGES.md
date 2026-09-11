@@ -8,7 +8,7 @@ modified version stays under the same license. The original `LICENSE` file, the
 copyright notices and the in-app "Developed by FabioZumbi12" credits are unchanged.
 
 - **Upstream base:** `v0.2.5` + 3 commits (`a7d06ad`, 2026-02-23)
-- **Modified by:** kicodebyts (Tobias Schlothane)
+- **Modified by:** **Tobias Schlothane** — [it-kicodebyts.com](https://it-kicodebyts.com)
 - **Date of change:** 2026-09-11
 - **Branch:** `feature/smart-context-mode`
 

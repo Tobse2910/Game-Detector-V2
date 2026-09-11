@@ -43,5 +43,34 @@ detect which application you are actually using, and switches the Twitch categor
 stream title only after that application has been in front for a configurable time
 (default 5 minutes), with anti-flapping and a category lock.
 
-See [FORK-CHANGES.md](FORK-CHANGES.md) for the full list of changes. The original
-GPL-2.0 license and all upstream credits are preserved.
+**What it adds:**
+
+- Foreground window detection — not "is a game running" but "what am I actually using"
+- Category **and** stream title set together through the Twitch API
+- Editable rule list: process (with `*` / `?` wildcards), optional window title match,
+  category, title template, per-rule delay, ignore flag, priority
+- Anti-flapping: 60 s cooldown after each switch, 60 s alt-tab tolerance, ignored
+  applications stay completely neutral
+- Dedicated editor for ignored applications, with one-click "add the app in front"
+- Optional chat announcement after each switch
+- Manual override: apply a category, switch now, reset the timer
+- Category lock that blocks every automatic change
+- German translation
+
+📄 **Installation and setup: [INSTALL.md](INSTALL.md)** (German)
+📄 **Full list of changes: [FORK-CHANGES.md](FORK-CHANGES.md)**
+
+Windows only — the foreground detection uses Windows APIs. Requires OBS 28+
+(tested on 32.2.1).
+
+---
+
+## 👤 Credits
+
+**Original plugin** by **Fábio F. Magalhães (FabioZumbi12)**
+<https://github.com/FabioZumbi12/game-detector>
+
+**Smart Context Mode** by **Tobias Schlothane** — [it-kicodebyts.com](https://it-kicodebyts.com)
+
+Licensed under the **GNU General Public License v2.0**, like the original.
+If you pass this plugin on, you have to pass the source along with it.

@@ -16,7 +16,24 @@ Wechsel passiert erst, wenn das eine Weile stabil so bleibt.
 
 ---
 
-## Installation
+## Installation — der einfache Weg
+
+1. OBS Studio **komplett schließen**
+2. ZIP entpacken
+3. Doppelklick auf **`Installieren.bat`**
+4. Windows-Abfrage mit **„Ja"** bestätigen
+
+Das Skript sucht deine OBS-Installation, kopiert das Plugin hinein und sagt dir, wie es
+weitergeht. Zum Entfernen gibt es **`Deinstallieren.bat`** — deine Einstellungen bleiben
+dabei erhalten.
+
+Wenn das klappt, kannst du direkt zu Schritt 2 weiter unten springen.
+
+---
+
+## Installation — von Hand
+
+Falls du lieber selbst kopierst oder das Skript dein OBS nicht findet.
 
 ### 1. Plugin kopieren
 
@@ -172,12 +189,14 @@ macOS läuft das restliche Plugin, aber Smart Context erkennt nichts.
 
 ---
 
-## Lizenz
+## Credits und Lizenz
 
-**GPL-2.0.** Ursprünglich entwickelt von **Fábio F. Magalhães (FabioZumbi12)** —
+**Ursprüngliches Plugin:** **Fábio F. Magalhães (FabioZumbi12)**
 <https://github.com/FabioZumbi12/game-detector>
 
-Der Smart Context Mode ist eine Erweiterung dieses Projekts. Alle Änderungen sind in
+**Smart Context Mode:** **Tobias Schlothane** — [it-kicodebyts.com](https://it-kicodebyts.com)
+
+Lizenz: **GNU General Public License v2.0**, wie das Original. Alle Änderungen sind in
 [FORK-CHANGES.md](FORK-CHANGES.md) dokumentiert.
 
 Wenn du dieses Plugin weitergibst, musst du den Quelltext mitliefern oder verlinken —
