@@ -77,7 +77,7 @@ jobs:
           # The launchers hardcode plugin\, so verify the path they actually call.
           foreach ($launcher in @("Installieren.bat", "Deinstallieren.bat")) {
             $text = Get-Content (Join-Path $stage $launcher) -Raw
-            foreach ($match in [regex]::Matches($text, '%~dp0([^"]+)')) {
+            foreach ($match in [regex]::Matches($text, '%~dp0([^"'']+)')) {
               $called = Join-Path $stage $match.Groups[1].Value
               if (-not (Test-Path $called)) { throw "$launcher calls a path that is not in the package: $($match.Groups[1].Value)" }
             }

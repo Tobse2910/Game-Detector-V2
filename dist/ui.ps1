@@ -156,6 +156,24 @@ function Start-GdFenster {
         $ps.BeginInvoke() | Out-Null
         $script:GdShell = $ps
         $script:GdGrafisch = $true
+
+        # Erst jetzt, wo das eigene Fenster steht: das Konsolenfenster verstecken,
+        # damit nicht zwei Fenster herumstehen. Die Startdateien tun dasselbe ueber
+        # -WindowStyle Hidden; das hier greift auch, wenn das Skript von Hand
+        # gestartet wurde. Bei fehlendem WPF bleibt die Konsole sichtbar, sonst waere
+        # gar nichts mehr zu sehen.
+        try {
+            if (-not ("Win.GdConsole" -as [type])) {
+                Add-Type -Namespace Win -Name GdConsole -MemberDefinition @'
+[DllImport("kernel32.dll")] public static extern IntPtr GetConsoleWindow();
+[DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+'@
+            }
+            $fenster = [Win.GdConsole]::GetConsoleWindow()
+            if ($fenster -ne [IntPtr]::Zero) {
+                [Win.GdConsole]::ShowWindow($fenster, 0) | Out-Null # 0 = SW_HIDE
+            }
+        } catch {}
     } catch {
         $script:GdGrafisch = $false
         Write-Host ""

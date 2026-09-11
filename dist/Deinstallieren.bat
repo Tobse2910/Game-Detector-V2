@@ -7,8 +7,8 @@ if %errorlevel% neq 0 (
     echo   Administratorrechte werden angefordert...
     echo   Bitte die Windows-Abfrage mit "Ja" bestaetigen.
     echo.
-    powershell -NoProfile -Command "Start-Process '%~f0' -Verb RunAs"
+    powershell -NoProfile -Command "Start-Process '%~f0' -Verb RunAs -WindowStyle Hidden"
     exit /b
 )
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0plugin\uninstall.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0plugin\uninstall.ps1"
