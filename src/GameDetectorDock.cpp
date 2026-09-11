@@ -269,6 +269,9 @@ GameDetectorDock::GameDetectorDock(QWidget *parent) : QWidget(parent)
 	connect(&ConfigManager::get(), &ConfigManager::settingsSaved, this, &GameDetectorDock::checkWarningsAndStatus);
 
 	connect(&UpdateChecker::get(), &UpdateChecker::updateAvailable, this, &GameDetectorDock::onUpdateAvailable);
+	connect(&UpdateChecker::get(), &UpdateChecker::updateStage, this, &GameDetectorDock::onUpdateStage);
+	connect(&UpdateChecker::get(), &UpdateChecker::updateFailed, this, &GameDetectorDock::onUpdateFailed);
+	connect(&UpdateChecker::get(), &UpdateChecker::readyToRestart, this, &GameDetectorDock::onUpdateReadyToRestart);
 
 	cooldownUpdateTimer = new QTimer(this);
 	connect(cooldownUpdateTimer, &QTimer::timeout, this, &GameDetectorDock::updateCooldownLabel);
@@ -297,6 +300,13 @@ void GameDetectorDock::buildUpdateNotice(QVBoxLayout *mainLayout)
 	updateNoticeLabel->setStyleSheet("font-weight: bold; color: #4a9e4a;");
 	noticeLayout->addWidget(updateNoticeLabel, 1);
 
+	updateInstallButton = new QPushButton(obs_module_text("Update.Install"), updateNoticeWidget);
+	updateInstallButton->setCursor(Qt::PointingHandCursor);
+	updateInstallButton->setToolTip(obs_module_text("Update.Install.Tooltip"));
+	noticeLayout->addWidget(updateInstallButton);
+
+	// Kept next to the one click button as the way out when elevation is refused or
+	// the release has no ZIP to install.
 	updateNoticeButton = new QPushButton(obs_module_text("Update.Open"), updateNoticeWidget);
 	updateNoticeButton->setCursor(Qt::PointingHandCursor);
 	updateNoticeButton->setToolTip(obs_module_text("Update.Open.Tooltip"));
@@ -309,16 +319,93 @@ void GameDetectorDock::buildUpdateNotice(QVBoxLayout *mainLayout)
 		if (!updateNoticeUrl.isEmpty())
 			QDesktopServices::openUrl(QUrl(updateNoticeUrl));
 	});
+	connect(updateInstallButton, &QPushButton::clicked, this, &GameDetectorDock::onUpdateInstallClicked);
 }
 
-void GameDetectorDock::onUpdateAvailable(const QString &version, const QString &url)
+void GameDetectorDock::onUpdateAvailable(const QString &version, const QString &url, const QString &downloadUrl)
 {
 	if (!updateNoticeWidget)
 		return;
 
+	updateVersion = version;
 	updateNoticeUrl = url;
+	updateDownloadUrl = downloadUrl;
+
 	updateNoticeLabel->setText(QString(obs_module_text("Update.Available")).arg(version));
+
+	// A release without a ZIP asset, or a plugin that is not sitting in an OBS
+	// install, leaves only the manual route.
+	const bool canInstall = !downloadUrl.isEmpty() && !UpdateChecker::installedObsDir().isEmpty();
+	updateInstallButton->setVisible(canInstall);
+
 	updateNoticeWidget->setVisible(true);
+}
+
+void GameDetectorDock::onUpdateInstallClicked()
+{
+	if (UpdateChecker::get().isUpdating())
+		return;
+
+	// Closing OBS is part of the update, so this must never happen mid-stream.
+	if (obs_frontend_streaming_active() || obs_frontend_recording_active()) {
+		QMessageBox::warning(this, obs_module_text("Update.Install"), obs_module_text("Update.Error.Live"));
+		return;
+	}
+
+	QMessageBox confirm(this);
+	confirm.setIcon(QMessageBox::Question);
+	confirm.setWindowTitle(obs_module_text("Update.Install"));
+	confirm.setText(QString(obs_module_text("Update.Confirm")).arg(updateVersion));
+	confirm.setInformativeText(obs_module_text("Update.Confirm.Detail"));
+	confirm.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
+	confirm.setDefaultButton(QMessageBox::Cancel);
+
+	if (confirm.exec() != QMessageBox::Yes)
+		return;
+
+	updateInstallButton->setEnabled(false);
+	updateNoticeLabel->setText(obs_module_text("Update.Stage.Downloading"));
+
+	UpdateChecker::get().startUpdate(updateDownloadUrl);
+}
+
+void GameDetectorDock::onUpdateStage(const QString &text)
+{
+	if (updateNoticeLabel)
+		updateNoticeLabel->setText(text);
+}
+
+void GameDetectorDock::onUpdateFailed(const QString &reason)
+{
+	if (!updateNoticeWidget)
+		return;
+
+	// Back to the notice, so a refused UAC prompt or a failed download can simply
+	// be tried again instead of leaving a dead button behind.
+	updateNoticeLabel->setText(QString(obs_module_text("Update.Available")).arg(updateVersion));
+	updateInstallButton->setEnabled(true);
+
+	QMessageBox::warning(this, obs_module_text("Update.Install"), reason);
+}
+
+void GameDetectorDock::onUpdateReadyToRestart()
+{
+	// The helper is up and waiting for this process to end. It cannot replace a
+	// loaded DLL, so OBS has to close now. Going through the main window is what
+	// makes OBS save its scenes and settings on the way out.
+	QWidget *mainWindow = static_cast<QWidget *>(obs_frontend_get_main_window());
+	if (!mainWindow) {
+		blog(LOG_WARNING, "[GameDetector] Cannot reach the OBS main window to close it for the update.");
+		if (updateNoticeLabel)
+			updateNoticeLabel->setText(obs_module_text("Update.Stage.CloseObs"));
+		return;
+	}
+
+	if (updateNoticeLabel)
+		updateNoticeLabel->setText(obs_module_text("Update.Stage.Restarting"));
+
+	blog(LOG_INFO, "[GameDetector] Closing OBS so the update helper can replace the plugin.");
+	QMetaObject::invokeMethod(mainWindow, "close", Qt::QueuedConnection);
 }
 
 void GameDetectorDock::buildSmartContextUi(QVBoxLayout *mainLayout)

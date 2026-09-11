@@ -46,8 +46,11 @@ private:
 	QLabel *obsStreamInfoHintLabel = nullptr;
 	QWidget *updateNoticeWidget = nullptr;
 	QLabel *updateNoticeLabel = nullptr;
+	QPushButton *updateInstallButton = nullptr;
 	QPushButton *updateNoticeButton = nullptr;
 	QString updateNoticeUrl;
+	QString updateDownloadUrl;
+	QString updateVersion;
 	QComboBox *manualCategoryCombo = nullptr;
 	QPushButton *manualApplyButton = nullptr;
 	QPushButton *applyNowButton = nullptr;
@@ -106,7 +109,11 @@ private slots:
 	void onApplyNowClicked();
 	void onResetTimerClicked();
 	void onIgnoredAppsClicked();
-	void onUpdateAvailable(const QString &version, const QString &url);
+	void onUpdateAvailable(const QString &version, const QString &url, const QString &downloadUrl);
+	void onUpdateInstallClicked();
+	void onUpdateStage(const QString &text);
+	void onUpdateFailed(const QString &reason);
+	void onUpdateReadyToRestart();
 };
 
 #endif // GAMEDETECTORDOCK_H

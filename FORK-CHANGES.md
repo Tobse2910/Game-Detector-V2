@@ -107,18 +107,39 @@ made a working change look broken:
   that was just made. A plugin cannot refresh or read that window, `obs-frontend-api`
   exposes nothing for it, so the dock states this instead of pretending otherwise.
 
-## Update check
+## Update check and one click update
 
 `src/UpdateChecker.h/.cpp` asks the GitHub API for the newest release of this fork and
-shows a notice with a button in the dock when it is newer than the running build. It
-reports only. It never downloads or installs anything: the plugin lives in
-`C:\Program Files\obs-studio`, so replacing its DLL needs elevation and a closed OBS,
-which is not something a background check should attempt on its own.
+shows a notice in the dock when it is newer than the running build. The check runs ten
+seconds after startup and then at most once a day, and can be switched off in the
+settings. The running version comes from `project()` in CMakeLists via
+`GAME_DETECTOR_VERSION`, which is the single place a version is defined.
 
-The check runs ten seconds after startup and then at most once a day, and can be
-switched off in the settings. The running version comes from `project()` in
-CMakeLists via `GAME_DETECTOR_VERSION`, which is the single place a version is
-defined.
+"Update now" runs the whole thing: download the release ZIP, hand it to an elevated
+helper, close OBS, replace the plugin, start OBS again. A plugin cannot do this alone.
+It lives in `C:\Program Files\obs-studio`, which needs elevation, and Windows keeps its
+DLL locked for as long as OBS has it loaded. So the work is split:
+
+1. The plugin downloads the ZIP to the temp folder. Binary data cannot go through
+   `ExecuteNetworkRequest`, whose QString would mangle it, so `DownloadToFile` writes
+   straight to a file. A transfer in flight can be aborted, otherwise closing OBS
+   during a download would block on it.
+2. `data/update.ps1` is started through `ShellExecuteExW` with the `runas` verb, which
+   is what raises the UAC prompt. It is run from a copy in the temp folder, because the
+   update replaces the shipped script itself.
+3. The helper waits for the OBS process id it was handed, then unpacks, checks that the
+   package really contains `game-detector.dll`, keeps a copy of the installed DLL,
+   replaces plugin and locale files, and restores that copy if anything fails halfway.
+   OBS is restarted through `explorer.exe` so it does not inherit the helper's
+   administrator rights.
+4. The plugin closes OBS through `obs_frontend_get_main_window()` once the helper is
+   waiting, which is what makes OBS save its scenes on the way out. An external
+   `WM_CLOSE` does not work on an elevated OBS.
+
+Two guards worth naming: the download URL is rejected unless it starts with this fork's
+own release path, because it ends up being handled by an elevated helper, and the
+update refuses to start while `obs_frontend_streaming_active()` or
+`obs_frontend_recording_active()` is true, since it closes OBS.
 
 `.github/workflows/release.yml` builds the plugin on every `v*` tag and attaches a ZIP
 containing the DLL, the locale files and the installer scripts from `dist/`. That
@@ -134,7 +155,8 @@ release is what the update check looks at.
 |---|---|
 | `src/SmartContextManager.h/.cpp` | Foreground polling, rule engine, stability timer, anti-flapping, category lock |
 | `src/SmartContextRulesDialog.h/.cpp` | Editor for the rule list |
-| `src/UpdateChecker.h/.cpp` | Asks the GitHub API for the newest release and reports it; no download, no install |
+| `src/UpdateChecker.h/.cpp` | Asks the GitHub API for the newest release, downloads it and hands it to the elevated helper |
+| `data/update.ps1` | Elevated helper: waits for OBS to exit, replaces the plugin, rolls back on failure, restarts OBS |
 | `.github/workflows/release.yml` | Builds on a `v*` tag and attaches the ready to use ZIP to the release |
 | `data/locale/de-DE.ini` | German translation (complete, including the existing strings) |
 | `FORK-CHANGES.md` | This file |
@@ -148,6 +170,7 @@ release is what the update check looks at.
 | `src/GameDetectorDock.h/.cpp` | New "Smart Context" group (mode toggle, category lock, delay, live status: active application / detected context / active since / switching in / current Twitch category). The pre-existing auto-update is suppressed while Smart Context Mode or the lock is on, and a merely running game no longer claims the category in that mode |
 | `src/GameDetectorSettingsDialog.h/.cpp` | Button opening the rule editor, update check switch, running version |
 | `src/PlatformManager.h/.cpp` | Logs the result of a category change, not just failures, and remembers the title that went with it |
+| `src/NetworkCommon.h` | `DownloadToFile()` for binary downloads, with an abort flag so closing OBS does not wait on a transfer |
 | `src/PluginMain.cpp` | Stop the Smart Context poller and the update check on module unload |
 | `CMakeLists.txt` | Added the new source files and passes the project version to the code as `GAME_DETECTOR_VERSION` |
 | `data/locale/en-US.ini` | New `SmartContext.*` and `Update.*` strings |
