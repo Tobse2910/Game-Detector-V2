@@ -127,12 +127,20 @@ DLL locked for as long as OBS has it loaded. So the work is split:
 2. `data/update.ps1` is started through `ShellExecuteExW` with the `runas` verb, which
    is what raises the UAC prompt. It is run from a copy in the temp folder, because the
    update replaces the shipped script itself.
-3. The helper waits for the OBS process id it was handed, then unpacks, checks that the
-   package really contains `game-detector.dll`, keeps a copy of the installed DLL,
-   replaces plugin and locale files, and restores that copy if anything fails halfway.
-   OBS is restarted through `explorer.exe` so it does not inherit the helper's
-   administrator rights.
-4. The plugin closes OBS through `obs_frontend_get_main_window()` once the helper is
+3. The helper waits for the OBS process id it was handed, checks that the package
+   really contains `game-detector.dll`, keeps a copy of the installed DLL, replaces
+   plugin and locale files, and restores that copy if anything fails halfway. It shows
+   its own window while doing so, because OBS is closed at that point.
+4. OBS is restarted through a shortcut opened by `explorer.exe`. Both parts matter:
+   going through Explorer keeps OBS from inheriting the helper's administrator rights,
+   and the shortcut carries the working directory, without which OBS starts in the
+   wrong folder and fails with "Failed to find locale/en-US.ini".
+
+The helper is taken from the downloaded package rather than from the installed version
+whenever it can be found there. A bug in the helper would otherwise be permanent: the
+broken copy on disk would run every future update. The installed copy is the fallback,
+and it accepts both an unpacked `-Source` and a `-Zip` so either side can be older.
+5. The plugin closes OBS through `obs_frontend_get_main_window()` once the helper is
    waiting, which is what makes OBS save its scenes on the way out. An external
    `WM_CLOSE` does not work on an elevated OBS.
 

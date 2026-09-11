@@ -4,8 +4,10 @@
 
 #include <QDateTime>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
+#include <QProcess>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -357,36 +359,86 @@ void UpdateChecker::onDownloadFinished()
 	emit readyToRestart();
 }
 
+// Unpacks the downloaded ZIP so the helper inside it can be used. Returns the
+// directory, or an empty string on failure.
+static QString unpackUpdate(const QString &zipPath)
+{
+	const QString target =
+		QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation)).filePath("game-detector-update");
+
+	QDir existing(target);
+	if (existing.exists())
+		existing.removeRecursively();
+
+	// Qt ships no ZIP reader, and PowerShell is already a hard dependency of the
+	// update path. This runs unelevated: nothing here touches Program Files.
+	const QString command = QString("Expand-Archive -LiteralPath '%1' -DestinationPath '%2' -Force")
+					.arg(QDir::toNativeSeparators(zipPath), QDir::toNativeSeparators(target));
+
+	QProcess unpack;
+	unpack.start("powershell.exe", {"-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command",
+					command});
+
+	if (!unpack.waitForFinished(120000) || unpack.exitCode() != 0) {
+		blog(LOG_WARNING, "[GameDetector/UpdateChecker] Unpacking the update failed: %s",
+		     unpack.readAllStandardError().constData());
+		return QString();
+	}
+
+	return QDir::toNativeSeparators(target);
+}
+
 bool UpdateChecker::launchElevatedHelper(const QString &zipPath)
 {
 #ifdef _WIN32
-	char *scriptPath = obs_module_file("update.ps1");
-	if (!scriptPath) {
-		blog(LOG_WARNING, "[GameDetector/UpdateChecker] update.ps1 is missing from the plugin data.");
-		emit updateFailed(obs_module_text("Update.Error.HelperMissing"));
-		return false;
+	// The helper is taken from the update itself whenever possible, not from the
+	// installed version. A bug in the helper would otherwise be unfixable: the
+	// broken copy would keep running every future update. The installed one is only
+	// the fallback.
+	const QString unpacked = unpackUpdate(zipPath);
+	QString helperSource;
+	QString sourceArgument;
+
+	if (!unpacked.isEmpty()) {
+		QDirIterator it(unpacked, {"update.ps1"}, QDir::Files, QDirIterator::Subdirectories);
+		if (it.hasNext()) {
+			helperSource = it.next();
+			sourceArgument = QString("-Source \"%1\"").arg(unpacked);
+			blog(LOG_INFO, "[GameDetector/UpdateChecker] Using the helper from the update package.");
+		}
 	}
 
-	const QString shipped = QString::fromUtf8(scriptPath);
-	bfree(scriptPath);
+	if (helperSource.isEmpty()) {
+		char *scriptPath = obs_module_file("update.ps1");
+		if (!scriptPath) {
+			blog(LOG_WARNING, "[GameDetector/UpdateChecker] update.ps1 is missing from the plugin data.");
+			emit updateFailed(obs_module_text("Update.Error.HelperMissing"));
+			return false;
+		}
+
+		helperSource = QString::fromUtf8(scriptPath);
+		bfree(scriptPath);
+
+		sourceArgument = QString("-Zip \"%1\"").arg(QDir::toNativeSeparators(zipPath));
+		blog(LOG_INFO, "[GameDetector/UpdateChecker] Using the installed helper.");
+	}
 
 	// The helper is run from a copy: the update replaces the shipped script itself,
 	// and a script file cannot be overwritten while it is being read.
 	const QString helper =
 		QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation)).filePath("game-detector-update.ps1");
 	QFile::remove(helper);
-	if (!QFile::copy(shipped, helper)) {
+	if (!QFile::copy(helperSource, helper)) {
 		blog(LOG_WARNING, "[GameDetector/UpdateChecker] Cannot copy the helper to %s.",
 		     helper.toStdString().c_str());
 		emit updateFailed(obs_module_text("Update.Error.HelperMissing"));
 		return false;
 	}
 
-	const QString arguments = QString("-NoProfile -ExecutionPolicy Bypass -File \"%1\" -Zip \"%2\" -ObsDir \"%3\" -WaitPid %4")
-					  .arg(QDir::toNativeSeparators(helper),
-					       QDir::toNativeSeparators(zipPath),
-					       installedObsDir(),
-					       QString::number((qulonglong)GetCurrentProcessId()));
+	const QString arguments =
+		QString("-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"%1\" %2 -ObsDir \"%3\" -WaitPid %4")
+			.arg(QDir::toNativeSeparators(helper), sourceArgument, installedObsDir(),
+			     QString::number((qulonglong)GetCurrentProcessId()));
 
 	const std::wstring file = L"powershell.exe";
 	const std::wstring params = arguments.toStdWString();
@@ -397,7 +449,9 @@ bool UpdateChecker::launchElevatedHelper(const QString &zipPath)
 	info.lpVerb = L"runas"; // triggers the UAC prompt; the helper needs Program Files
 	info.lpFile = file.c_str();
 	info.lpParameters = params.c_str();
-	info.nShow = SW_SHOWNORMAL;
+	// Hidden: the helper puts up its own window, the console behind it would only
+	// be noise.
+	info.nShow = SW_HIDE;
 
 	if (!ShellExecuteExW(&info)) {
 		const DWORD error = GetLastError();
