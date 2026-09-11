@@ -22,7 +22,24 @@ PlatformManager::PlatformManager()
 	TwitchServiceAdapter *twitch = new TwitchServiceAdapter(this);
 	TrovoAuthManager *trovo = new TrovoAuthManager(this);
 
+	// Only failures used to be logged, which made a successful change look like an
+	// abort: after "Changing category to: X" nothing followed. The result is logged
+	// either way now, so the log alone answers whether the platform took the change.
 	auto forwardSignal = [this](bool success, QString gameName, QString error) {
+		if (success) {
+			if (lastSetTitle.isEmpty()) {
+				blog(LOG_INFO, "[GameDetector/PlatformManager] Category set: %s",
+				     gameName.toStdString().c_str());
+			} else {
+				blog(LOG_INFO, "[GameDetector/PlatformManager] Category set: %s (title: %s)",
+				     gameName.toStdString().c_str(), lastSetTitle.toStdString().c_str());
+			}
+		} else {
+			blog(LOG_WARNING, "[GameDetector/PlatformManager] Category change to %s failed: %s",
+			     gameName.toStdString().c_str(),
+			     error.isEmpty() ? "no reason given" : error.toStdString().c_str());
+		}
+
 		emit categoryUpdateFinished(success, gameName, error);
 	};
 	connect(twitch, &IPlatformService::categoryUpdateFinished, this, forwardSignal);
@@ -125,6 +142,8 @@ bool PlatformManager::updateCategory(const QString &gameName, const QString &tit
 
 	QStringList targetPlatforms = this->property("targetPlatforms").toStringList();
 	this->setProperty("targetPlatforms", QVariant());
+
+	lastSetTitle = title;
 
 	blog(LOG_INFO, "[GameDetector/PlatformManager] Changing category to: %s", gameName.toStdString().c_str());
 

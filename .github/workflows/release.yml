@@ -1,4 +1,14 @@
-﻿name: Build GameDetector (Windows)
+name: Release (Windows)
+
+# Builds the plugin and attaches a ready to use ZIP to the release for the pushed tag.
+# UpdateChecker asks the GitHub API for the newest release, so a tag is what makes an
+# update visible to everyone who already has the plugin installed.
+#
+# Tagging is the only step done by hand:
+#   git tag v1.1.0 && git push tobse v1.1.0
+#
+# workflow_dispatch runs the build alone, without publishing anything, to check that
+# the build still works without spending a version number on it.
 
 permissions:
   contents: write
@@ -7,88 +17,114 @@ on:
   push:
     tags:
       - "v*"
-
-env:
-  BUILD_TYPE: Release
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # Instalar Inno Setup
-    - name: Install Inno Setup
-      run: |
-        curl -L -o innosetup.exe https://files.jrsoftware.org/is/6/innosetup-6.6.0.exe
-        .\innosetup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+      # Same preset and options as a local build, so CI cannot drift away from what
+      # was tested by hand. Inno Setup stays off: the fork ships the PowerShell
+      # installer in dist/ instead.
+      - name: Configure
+        run: cmake --preset windows-x64 -DENABLE_INNO_SETUP=OFF
 
-    - name: Install Brazilian Portuguese language
-      shell: cmd
-      run: |
-        curl -L -o BrazilianPortuguese.isl https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/BrazilianPortuguese.isl
-        if not exist "C:\Program Files (x86)\Inno Setup 6\Languages\" mkdir "C:\Program Files (x86)\Inno Setup 6\Languages\"
-        copy /Y BrazilianPortuguese.isl "C:\Program Files (x86)\Inno Setup 6\Languages\BrazilianPortuguese.isl"
+      - name: Build
+        run: cmake --build build_x64 --config RelWithDebInfo --target GameDetector
 
-    # Configurar CMake
-    - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+      # The layout here is what dist/install.ps1 expects next to itself: it copies
+      # obs-plugins\64bit\game-detector.dll and data\obs-plugins\game-detector\* into
+      # the OBS folder it finds.
+      - name: Assemble package
+        shell: pwsh
+        run: |
+          $stage = "package"
+          New-Item -ItemType Directory -Force -Path "$stage/obs-plugins/64bit" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$stage/data/obs-plugins/game-detector" | Out-Null
 
-    # Compilar plugin
-    - name: Build
-      run: cmake --build build --config ${{ env.BUILD_TYPE }}
+          Copy-Item "build_x64/RelWithDebInfo/game-detector.dll" "$stage/obs-plugins/64bit/" -Force
+          Copy-Item "data/*" "$stage/data/obs-plugins/game-detector/" -Recurse -Force
+          Copy-Item "dist/*" "$stage/" -Force
+          # LICENSE and FORK-CHANGES ship with the binary because GPL-2.0 asks for
+          # the license text and for the changes against upstream to be marked.
+          Copy-Item "INSTALL.md", "README.md", "LICENSE", "FORK-CHANGES.md" "$stage/" -Force
 
-    # Buscar histórico de commits desde o último tag
-    - name: Generate Release Notes from Commits
-      id: notes
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const fs = require('fs');
-          const { owner, repo } = context.repo;
-          const currentTag = process.env.GITHUB_REF_NAME;
-
-          // List tags
-          const tags = await github.rest.repos.listTags({ owner, repo });
-
-          // Prevent crash if only 1 tag exists
-          const previousTag = tags.data.length > 1 ? tags.data[1].name : null;
-
-          let commitsText = "";
-
-          if (previousTag) {
-            const compare = await github.rest.repos.compareCommits({
-              owner,
-              repo,
-              base: previousTag,
-              head: currentTag
-            });
-
-            commitsText = compare.data.commits
-              .map(c => `- ${c.commit.message.split("\n")[0]} (by ${c.commit.author.name})`)
-              .join("\n");
-          } else {
-            commitsText = "First release — no previous history.";
+          if (-not (Test-Path "$stage/obs-plugins/64bit/game-detector.dll")) {
+            throw "game-detector.dll missing from the package"
+          }
+          if (-not (Test-Path "$stage/Installieren.bat")) {
+            throw "Installieren.bat missing from the package"
           }
 
-          const note = `### Changes included in this version\n\n${commitsText}`;
+          $name = if ($env:GITHUB_REF_NAME -match '^v') { $env:GITHUB_REF_NAME } else { "dev" }
+          Compress-Archive -Path "$stage/*" -DestinationPath "Game-Detector-V2-$name.zip" -Force
+          Get-ChildItem "Game-Detector-V2-$name.zip" | Select-Object Name, Length
 
-          // SAFE multiline output
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, `body<<EOF\n${note}\nEOF\n`);
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-detector-plugin
+          path: Game-Detector-V2-*.zip
 
-    # Criar Release e enviar os assets usando softprops/action-gh-release
-    - name: Publish Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ github.ref_name }}
-        name: GameDetector Release ${{ github.ref_name }}
-        body: ${{ steps.notes.outputs.body }}
-        draft: false
-        prerelease: false
-        files: |
-          setup/GameDetector.zip
-          setup/GameDetector-Setup.exe
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release notes from commits
+        if: startsWith(github.ref, 'refs/tags/')
+        id: notes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const currentTag = process.env.GITHUB_REF_NAME;
+
+            const tags = await github.rest.repos.listTags({ owner, repo });
+            const previousTag = tags.data.length > 1 ? tags.data[1].name : null;
+
+            let commitsText = "";
+
+            if (previousTag) {
+              const compare = await github.rest.repos.compareCommits({
+                owner,
+                repo,
+                base: previousTag,
+                head: currentTag
+              });
+
+              commitsText = compare.data.commits
+                .map(c => `- ${c.commit.message.split("\n")[0]}`)
+                .join("\n");
+            } else {
+              commitsText = "First release of this fork.";
+            }
+
+            const note = [
+              "### Installation",
+              "",
+              "1. ZIP herunterladen und entpacken",
+              "2. OBS Studio komplett schliessen",
+              "3. `Installieren.bat` als Administrator starten",
+              "",
+              "Details stehen in `ANLEITUNG.txt` im ZIP.",
+              "",
+              "### Aenderungen",
+              "",
+              commitsText
+            ].join("\n");
+
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `body<<EOF\n${note}\nEOF\n`);
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Game Detector V2 ${{ github.ref_name }}
+          body: ${{ steps.notes.outputs.body }}
+          draft: false
+          prerelease: false
+          files: Game-Detector-V2-*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

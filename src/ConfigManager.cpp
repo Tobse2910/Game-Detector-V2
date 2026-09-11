@@ -47,6 +47,9 @@ void ConfigManager::load()
 		obs_data_set_bool(settings, SMART_CONTEXT_ANNOUNCE_KEY, false);
 		obs_data_set_string(settings, SMART_CONTEXT_ANNOUNCE_MESSAGE_KEY, "Category changed to {game}");
 
+		obs_data_set_bool(settings, UPDATE_CHECK_ENABLED_KEY, true);
+		obs_data_set_int(settings, UPDATE_CHECK_LAST_KEY, 0);
+
 		obs_data_array_t *default_rules = createDefaultSmartContextRules();
 		obs_data_set_array(settings, SMART_CONTEXT_RULES_KEY, default_rules);
 		obs_data_array_release(default_rules);
@@ -149,6 +152,12 @@ void ConfigManager::load()
 
 	if (!obs_data_has_user_value(settings, SMART_CONTEXT_ANNOUNCE_MESSAGE_KEY))
 		obs_data_set_string(settings, SMART_CONTEXT_ANNOUNCE_MESSAGE_KEY, "Category changed to {game}");
+
+	if (!obs_data_has_user_value(settings, UPDATE_CHECK_ENABLED_KEY))
+		obs_data_set_bool(settings, UPDATE_CHECK_ENABLED_KEY, true);
+
+	if (!obs_data_has_user_value(settings, UPDATE_CHECK_LAST_KEY))
+		obs_data_set_int(settings, UPDATE_CHECK_LAST_KEY, 0);
 
 	if (!obs_data_has_user_value(settings, SMART_CONTEXT_RULES_KEY)) {
 		obs_data_array_t *default_rules = createDefaultSmartContextRules();
@@ -532,6 +541,34 @@ QString ConfigManager::getSmartContextAnnounceMessage() const
 	if (!settings)
 		return "Category changed to {game}";
 	return QString::fromUtf8(obs_data_get_string(settings, SMART_CONTEXT_ANNOUNCE_MESSAGE_KEY));
+}
+
+bool ConfigManager::getUpdateCheckEnabled() const
+{
+	if (!settings)
+		return true;
+	return obs_data_get_bool(settings, UPDATE_CHECK_ENABLED_KEY);
+}
+
+void ConfigManager::setUpdateCheckEnabled(bool value)
+{
+	if (!settings)
+		return;
+	obs_data_set_bool(settings, UPDATE_CHECK_ENABLED_KEY, value);
+}
+
+long long ConfigManager::getUpdateCheckLast() const
+{
+	if (!settings)
+		return 0;
+	return (long long)obs_data_get_int(settings, UPDATE_CHECK_LAST_KEY);
+}
+
+void ConfigManager::setUpdateCheckLast(long long secondsSinceEpoch)
+{
+	if (!settings)
+		return;
+	obs_data_set_int(settings, UPDATE_CHECK_LAST_KEY, (long long)secondsSinceEpoch);
 }
 
 obs_data_array_t *ConfigManager::getSmartContextRules() const

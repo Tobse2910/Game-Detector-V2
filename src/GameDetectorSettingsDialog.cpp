@@ -7,6 +7,7 @@
 #include "TrovoAuthManager.h"
 #include "PlatformManager.h"
 #include "SmartContextRulesDialog.h"
+#include "UpdateChecker.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -173,6 +174,20 @@ GameDetectorSettingsDialog::GameDetectorSettingsDialog(QWidget *parent) : QDialo
 
 	mainLayout->addLayout(authAndActionLayout);
 
+	// Added by the kicodebyts fork: the update check only reports, so it stays a
+	// single switch. The running version sits next to it, because that is the first
+	// thing anyone needs when comparing against a release.
+	QHBoxLayout *updateLayout = new QHBoxLayout();
+	updateCheckCheckbox = new QCheckBox(obs_module_text("Settings.UpdateCheck"));
+	updateCheckCheckbox->setToolTip(obs_module_text("Settings.UpdateCheck.Tooltip"));
+	updateLayout->addWidget(updateCheckCheckbox);
+	updateLayout->addStretch(1);
+
+	QLabel *versionLabel = new QLabel(QString(obs_module_text("Settings.Version")).arg(UpdateChecker::currentVersion()));
+	versionLabel->setStyleSheet("color: gray;");
+	updateLayout->addWidget(versionLabel);
+	mainLayout->addLayout(updateLayout);
+
 	mainLayout->addStretch(1);
 
 	QHBoxLayout *dialogButtonsLayout = new QHBoxLayout();
@@ -261,6 +276,7 @@ void GameDetectorSettingsDialog::loadSettings()
 	actionComboBox->blockSignals(false);
 	unifiedAuthCheckbox->setChecked(ConfigManager::get().getUnifiedAuth());
 	autoUpdateOnlyWhileStreamingCheckbox->setChecked(ConfigManager::get().getBlockAutoUpdateWhileStreaming());
+	updateCheckCheckbox->setChecked(ConfigManager::get().getUpdateCheckEnabled());
 	commandInput->setText(ConfigManager::get().getCommand());
 	noGameCommandInput->setText(ConfigManager::get().getNoGameCommand());
 	delaySpinBox->setValue(ConfigManager::get().getActionDelay());
@@ -286,6 +302,7 @@ void GameDetectorSettingsDialog::saveSettings()
 	obs_data_set_bool(settings, "twitch_unified_auth", unifiedAuthCheckbox->isChecked());
 	obs_data_set_bool(settings, "block_auto_update_while_streaming",
 			  autoUpdateOnlyWhileStreamingCheckbox->isChecked());
+	ConfigManager::get().setUpdateCheckEnabled(updateCheckCheckbox->isChecked());
 	obs_data_set_string(settings, "twitch_command_message", commandInput->text().toStdString().c_str());
 	obs_data_set_string(settings, "twitch_command_no_game", noGameCommandInput->text().toStdString().c_str());
 	obs_data_set_int(settings, ConfigManager::ACTION_DELAY_KEY, delaySpinBox->value());

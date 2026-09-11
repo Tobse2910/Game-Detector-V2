@@ -42,6 +42,12 @@ private:
 	QLabel *smartSwitchInValueLabel = nullptr;
 	QLabel *smartCategoryValueLabel = nullptr;
 	QLabel *smartTitleValueLabel = nullptr;
+	QLabel *smartLastSetValueLabel = nullptr;
+	QLabel *obsStreamInfoHintLabel = nullptr;
+	QWidget *updateNoticeWidget = nullptr;
+	QLabel *updateNoticeLabel = nullptr;
+	QPushButton *updateNoticeButton = nullptr;
+	QString updateNoticeUrl;
 	QComboBox *manualCategoryCombo = nullptr;
 	QPushButton *manualApplyButton = nullptr;
 	QPushButton *applyNowButton = nullptr;
@@ -63,6 +69,7 @@ private:
 	void updateCooldownLabel();
 
 	void buildSmartContextUi(QVBoxLayout *mainLayout);
+	void buildUpdateNotice(QVBoxLayout *mainLayout);
 	void applySmartContextMode();
 	void refreshManualCategoryCombo();
 
@@ -99,6 +106,7 @@ private slots:
 	void onApplyNowClicked();
 	void onResetTimerClicked();
 	void onIgnoredAppsClicked();
+	void onUpdateAvailable(const QString &version, const QString &url);
 };
 
 #endif // GAMEDETECTORDOCK_H

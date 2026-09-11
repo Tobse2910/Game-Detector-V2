@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 3.28...3.30)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake" NO_POLICY_SCOPE)
 
-project(GameDetector VERSION 1.0.0)
+project(GameDetector VERSION 1.1.0)
 
 option(ENABLE_FRONTEND_API "Use obs-frontend-api for UI functionality" ON)
 option(ENABLE_QT "Use Qt functionality" ON)
@@ -29,6 +29,13 @@ include(defaults)
 include(helpers)
 
 add_library(${CMAKE_PROJECT_NAME} MODULE)
+
+# The version lives only in project() above. UpdateChecker compares it against the
+# newest GitHub release, so it has to reach the code from a single source of truth.
+target_compile_definitions(
+  ${CMAKE_PROJECT_NAME}
+  PRIVATE GAME_DETECTOR_VERSION="${CMAKE_PROJECT_VERSION}"
+)
 
 find_package(libobs REQUIRED)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs)
@@ -123,6 +130,7 @@ target_sources(
     "src/SmartContextManager.cpp"
     "src/SmartContextRulesDialog.cpp"
     "src/IgnoredAppsDialog.cpp"
+    "src/UpdateChecker.cpp"
     "src/IPlatformService.h"
 )
 

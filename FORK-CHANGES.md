@@ -1,4 +1,4 @@
-# Fork Changes — Smart Context Mode
+# Fork Changes - Smart Context Mode
 
 This is a modified version of **Game Detector** by **Fábio F. Magalhães (FabioZumbi12)**
 (<https://github.com/FabioZumbi12/game-detector>).
@@ -8,7 +8,7 @@ modified version stays under the same license. The original `LICENSE` file, the
 copyright notices and the in-app "Developed by FabioZumbi12" credits are unchanged.
 
 - **Upstream base:** `v0.2.5` + 3 commits (`a7d06ad`, 2026-02-23)
-- **Modified by:** **Tobias Schlothane** — [it-kicodebyts.com](https://it-kicodebyts.com)
+- **Modified by:** **Tobias Schlothane** - [it-kicodebyts.com](https://it-kicodebyts.com)
   (designed, specified and tested by Tobias Schlothane; implemented together with
   [Claude Code](https://claude.com/claude-code))
 - **Date of change:** 2026-09-11
@@ -23,8 +23,8 @@ below together with what was changed.
 
 **Smart Context Mode.** Upstream answers the question *"is a known game process
 running?"*. This fork adds a second, independent question: *"which application is the
-user actually looking at right now?"* — answered by polling the Windows foreground
-window once per second — and only switches the stream category once that answer has
+user actually looking at right now?"* - answered by polling the Windows foreground
+window once per second - and only switches the stream category once that answer has
 been stable for a configurable amount of time.
 
 Nothing from upstream was reimplemented. Twitch OAuth, the category and title API
@@ -42,7 +42,7 @@ action delay / cooldown logic are all reused as they are.
 - **Anti-flapping:**
   - after a switch, at least 60 seconds pass before the next one,
   - ignored applications (Discord, OBS, Explorer, Wave Link, Spotify, the Steam, Epic
-    and Rockstar launchers) are neutral — they neither change the category nor age a
+    and Rockstar launchers) are neutral - they neither change the category nor age a
     pending one,
   - a short alt-tab does not discard accumulated time: the progress of the application
     you left is parked for 60 seconds and restored if you come back.
@@ -58,7 +58,7 @@ a manual section:
 
 - a category picker filled from your own rules (and freely typeable) plus **Apply**,
   which sets that category and the matching rule's title template immediately,
-- **Switch now**, which applies the pending context without waiting out the delay — the
+- **Switch now**, which applies the pending context without waiting out the delay - the
   button names the category it would switch to and is only active while something is
   actually pending,
 - **Reset timer**, which discards the pending switch and starts counting from zero.
@@ -80,13 +80,49 @@ The rule list ships with defaults and is fully editable under
 | `FiveM.exe`, `FiveM_*.exe` | Grand Theft Auto V | own title template |
 | `Code.exe`, `devenv.exe`, `idea64.exe`, … | Software and Game Development | dev tools |
 | `firefox.exe`, `chrome.exe`, `msedge.exe` | Just Chatting | browsers |
-| `discord.exe`, `obs64.exe`, `explorer.exe`, `WaveLink.exe`, `Spotify.exe`, `steam.exe`, `EpicGamesLauncher.exe`, `Launcher.exe`, … | — | ignored, category is kept |
+| `discord.exe`, `obs64.exe`, `explorer.exe`, `WaveLink.exe`, `Spotify.exe`, `steam.exe`, `EpicGamesLauncher.exe`, `Launcher.exe`, … | - | ignored, category is kept |
 
 Process names support `*` and `?` wildcards. Title templates support the placeholders
 `{game}`, `{category}`, `{app}` and `{window}`. Browser handling deliberately uses only
-the process name, the foreground state and the window title — no browser history is
+the process name, the foreground state and the window title - no browser history is
 read. A per-rule "window title contains" field is already in place, so an optional
 local domain detection can be added later without touching the engine.
+
+---
+
+## Result visibility
+
+A category change made through the platform API used to leave no visible trace, which
+made a working change look broken:
+
+- Only failures were logged. After `Changing category to: X` nothing followed, so the
+  log looked like the change had been dropped. The result is now logged either way,
+  with the title that went along with it.
+- The dock gained a "Last set" row with a timestamp, kept until the next change. The
+  status line above it resets itself after three seconds, which was too short to
+  notice during a stream.
+- OBS' own Stream Information window is an input form, not a live view. It fills
+  itself once when it loads and then keeps showing that value, and its Done button
+  writes whatever still stands in the form back to the platform, undoing the change
+  that was just made. A plugin cannot refresh or read that window, `obs-frontend-api`
+  exposes nothing for it, so the dock states this instead of pretending otherwise.
+
+## Update check
+
+`src/UpdateChecker.h/.cpp` asks the GitHub API for the newest release of this fork and
+shows a notice with a button in the dock when it is newer than the running build. It
+reports only. It never downloads or installs anything: the plugin lives in
+`C:\Program Files\obs-studio`, so replacing its DLL needs elevation and a closed OBS,
+which is not something a background check should attempt on its own.
+
+The check runs ten seconds after startup and then at most once a day, and can be
+switched off in the settings. The running version comes from `project()` in
+CMakeLists via `GAME_DETECTOR_VERSION`, which is the single place a version is
+defined.
+
+`.github/workflows/release.yml` builds the plugin on every `v*` tag and attaches a ZIP
+containing the DLL, the locale files and the installer scripts from `dist/`. That
+release is what the update check looks at.
 
 ---
 
@@ -98,6 +134,8 @@ local domain detection can be added later without touching the engine.
 |---|---|
 | `src/SmartContextManager.h/.cpp` | Foreground polling, rule engine, stability timer, anti-flapping, category lock |
 | `src/SmartContextRulesDialog.h/.cpp` | Editor for the rule list |
+| `src/UpdateChecker.h/.cpp` | Asks the GitHub API for the newest release and reports it; no download, no install |
+| `.github/workflows/release.yml` | Builds on a `v*` tag and attaches the ready to use ZIP to the release |
 | `data/locale/de-DE.ini` | German translation (complete, including the existing strings) |
 | `FORK-CHANGES.md` | This file |
 
@@ -105,13 +143,14 @@ local domain detection can be added later without touching the engine.
 
 | File | Change |
 |---|---|
-| `src/ConfigManager.h/.cpp` | New config keys (`smart_context_*`), their getters/setters and the built-in default rule list |
+| `src/ConfigManager.h/.cpp` | New config keys (`smart_context_*`, `update_check_*`), their getters/setters and the built-in default rule list |
 | `src/GameDetector.h/.cpp` | Added `getGameNameForExe()`, a read-only case-insensitive lookup in the configured game list. Existing detection untouched |
 | `src/GameDetectorDock.h/.cpp` | New "Smart Context" group (mode toggle, category lock, delay, live status: active application / detected context / active since / switching in / current Twitch category). The pre-existing auto-update is suppressed while Smart Context Mode or the lock is on, and a merely running game no longer claims the category in that mode |
-| `src/GameDetectorSettingsDialog.h/.cpp` | Button opening the rule editor |
-| `src/PluginMain.cpp` | Stop the Smart Context poller on module unload |
-| `CMakeLists.txt` | Added the two new source files |
-| `data/locale/en-US.ini` | New `SmartContext.*` strings |
+| `src/GameDetectorSettingsDialog.h/.cpp` | Button opening the rule editor, update check switch, running version |
+| `src/PlatformManager.h/.cpp` | Logs the result of a category change, not just failures, and remembers the title that went with it |
+| `src/PluginMain.cpp` | Stop the Smart Context poller and the update check on module unload |
+| `CMakeLists.txt` | Added the new source files and passes the project version to the code as `GAME_DETECTOR_VERSION` |
+| `data/locale/en-US.ini` | New `SmartContext.*` and `Update.*` strings |
 
 Untouched: Twitch and Trovo authentication, the platform API calls, the scanners,
 hotkeys, the game list, OBS scenes and audio settings.

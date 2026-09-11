@@ -13,6 +13,7 @@
 #include "PlatformManager.h"
 #include "TwitchAuthManager.h"
 #include "SmartContextManager.h"
+#include "UpdateChecker.h"
 
 static obs_hotkey_id g_set_game_hotkey_id;
 static obs_hotkey_id g_rescan_games_hotkey_id;
@@ -149,6 +150,8 @@ bool obs_module_load(void)
 	get_dock()->loadSettingsFromConfig();
 	blog(LOG_INFO, "[GameDetector] Config file path: %s", obs_module_config_path("config.json"));
 
+	UpdateChecker::get().start();
+
 	GameDetector::get().loadGamesFromConfig();
 	GameDetector::get().startScanning();
 	GameDetector::get().setupPeriodicScan();
@@ -181,6 +184,7 @@ void obs_module_unload(void)
 
 	SmartContextManager::get().stop();
 	GameDetector::get().stopScanning();
+	UpdateChecker::get().shutdown();
 	TwitchAuthManager::get().shutdown();
 	PlatformManager::get().shutdown();
 	ConfigManager::get().save(ConfigManager::get().getSettings());

@@ -44,6 +44,9 @@ private:
 	bool onCooldown = false;
 
 	QString lastSetCategoryName;
+	// Kept so the result log line can name the title as well; the finished signal
+	// only carries the category.
+	QString lastSetTitle;
 
 	QFutureWatcher<QString> *gameIdWatcher;
 	QFutureWatcher<bool> *chatMessageWatcher;

@@ -7,6 +7,7 @@
 #include "TrovoAuthManager.h"
 #include "SmartContextManager.h"
 #include "IgnoredAppsDialog.h"
+#include "UpdateChecker.h"
 
 #include <QComboBox>
 #include <QFrame>
@@ -33,6 +34,8 @@ GameDetectorDock::GameDetectorDock(QWidget *parent) : QWidget(parent)
 {
 	QVBoxLayout *mainLayout = new QVBoxLayout(this);
 	this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+
+	buildUpdateNotice(mainLayout);
 
 	detectedGameName = "Just Chatting";
 	desiredCategory = "Just Chatting";
@@ -265,6 +268,8 @@ GameDetectorDock::GameDetectorDock(QWidget *parent) : QWidget(parent)
 
 	connect(&ConfigManager::get(), &ConfigManager::settingsSaved, this, &GameDetectorDock::checkWarningsAndStatus);
 
+	connect(&UpdateChecker::get(), &UpdateChecker::updateAvailable, this, &GameDetectorDock::onUpdateAvailable);
+
 	cooldownUpdateTimer = new QTimer(this);
 	connect(cooldownUpdateTimer, &QTimer::timeout, this, &GameDetectorDock::updateCooldownLabel);
 
@@ -277,6 +282,43 @@ GameDetectorDock::GameDetectorDock(QWidget *parent) : QWidget(parent)
 	mainLayout->addStretch(1);
 
 	setLayout(mainLayout);
+}
+
+// Added by the kicodebyts fork. Stays hidden until UpdateChecker reports something
+// newer, so it costs no space in the normal case.
+void GameDetectorDock::buildUpdateNotice(QVBoxLayout *mainLayout)
+{
+	updateNoticeWidget = new QWidget(this);
+	QHBoxLayout *noticeLayout = new QHBoxLayout(updateNoticeWidget);
+	noticeLayout->setContentsMargins(0, 0, 0, 4);
+
+	updateNoticeLabel = new QLabel(updateNoticeWidget);
+	updateNoticeLabel->setWordWrap(true);
+	updateNoticeLabel->setStyleSheet("font-weight: bold; color: #4a9e4a;");
+	noticeLayout->addWidget(updateNoticeLabel, 1);
+
+	updateNoticeButton = new QPushButton(obs_module_text("Update.Open"), updateNoticeWidget);
+	updateNoticeButton->setCursor(Qt::PointingHandCursor);
+	updateNoticeButton->setToolTip(obs_module_text("Update.Open.Tooltip"));
+	noticeLayout->addWidget(updateNoticeButton);
+
+	updateNoticeWidget->setVisible(false);
+	mainLayout->addWidget(updateNoticeWidget);
+
+	connect(updateNoticeButton, &QPushButton::clicked, this, [this]() {
+		if (!updateNoticeUrl.isEmpty())
+			QDesktopServices::openUrl(QUrl(updateNoticeUrl));
+	});
+}
+
+void GameDetectorDock::onUpdateAvailable(const QString &version, const QString &url)
+{
+	if (!updateNoticeWidget)
+		return;
+
+	updateNoticeUrl = url;
+	updateNoticeLabel->setText(QString(obs_module_text("Update.Available")).arg(version));
+	updateNoticeWidget->setVisible(true);
 }
 
 void GameDetectorDock::buildSmartContextUi(QVBoxLayout *mainLayout)
@@ -320,6 +362,7 @@ void GameDetectorDock::buildSmartContextUi(QVBoxLayout *mainLayout)
 	smartSwitchInValueLabel = makeValueLabel();
 	smartCategoryValueLabel = makeValueLabel();
 	smartTitleValueLabel = makeValueLabel();
+	smartLastSetValueLabel = makeValueLabel();
 
 	statusForm->addRow(obs_module_text("SmartContext.Status.ActiveApp"), smartAppValueLabel);
 	statusForm->addRow(obs_module_text("SmartContext.Status.Context"), smartContextValueLabel);
@@ -327,8 +370,20 @@ void GameDetectorDock::buildSmartContextUi(QVBoxLayout *mainLayout)
 	statusForm->addRow(obs_module_text("SmartContext.Status.SwitchIn"), smartSwitchInValueLabel);
 	statusForm->addRow(obs_module_text("SmartContext.Status.CurrentCategory"), smartCategoryValueLabel);
 	statusForm->addRow(obs_module_text("SmartContext.Status.CurrentTitle"), smartTitleValueLabel);
+	statusForm->addRow(obs_module_text("SmartContext.Status.LastSet"), smartLastSetValueLabel);
 
 	smartLayout->addLayout(statusForm);
+
+	// OBS' own stream information panel is an input form, not a live view: it fills
+	// itself once when it loads and then keeps showing that value, so an API change
+	// made here never appears in it. Worse, its "Done" button writes whatever still
+	// stands in the form back to the platform and undoes the change. There is no way
+	// to refresh or read that panel from a plugin, obs-frontend-api offers nothing
+	// for it, so the only honest option is to say so.
+	obsStreamInfoHintLabel = new QLabel(obs_module_text("SmartContext.StreamInfoHint"), this);
+	obsStreamInfoHintLabel->setWordWrap(true);
+	obsStreamInfoHintLabel->setStyleSheet("font-size: 8pt; color: #c08040; margin-top: 4px;");
+	smartLayout->addWidget(obsStreamInfoHintLabel);
 
 	// Manual override, so the automatic decision can always be taken over by hand.
 	QFrame *manualSeparator = new QFrame();
@@ -651,6 +706,23 @@ void GameDetectorDock::onCategoryUpdateFinished(bool success, const QString &gam
 	}
 
 	cooldownUpdateTimer->stop();
+
+	// The status label below resets itself after three seconds, and OBS' own stream
+	// information panel never updates at all, so without this row there is no
+	// lasting sign anywhere in the UI that the change went through.
+	if (smartLastSetValueLabel) {
+		const QString time = QTime::currentTime().toString("HH:mm:ss");
+		if (success) {
+			smartLastSetValueLabel->setText(
+				QString(obs_module_text("SmartContext.Status.LastSet.Ok")).arg(time, gameName));
+			smartLastSetValueLabel->setStyleSheet("font-weight: bold;");
+		} else {
+			smartLastSetValueLabel->setText(
+				QString(obs_module_text("SmartContext.Status.LastSet.Failed")).arg(time, gameName));
+			smartLastSetValueLabel->setStyleSheet("font-weight: bold; color: #d05050;");
+		}
+	}
+
 	if (success) {
 		statusLabel->setText(QString(obs_module_text("Dock.CategoryUpdated")).arg(gameName));
 		PlatformManager::get().fetchCurrentCategories();

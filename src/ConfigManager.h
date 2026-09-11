@@ -30,6 +30,10 @@ private:
 	static constexpr const char *SMART_CONTEXT_COOLDOWN_KEY = "smart_context_switch_cooldown";
 	static constexpr const char *SMART_CONTEXT_GRACE_KEY = "smart_context_grace";
 
+	// Update check against the GitHub releases of the fork
+	static constexpr const char *UPDATE_CHECK_ENABLED_KEY = "update_check_enabled";
+	static constexpr const char *UPDATE_CHECK_LAST_KEY = "update_check_last";
+
 	obs_data_t *settings = nullptr;
 
 	explicit ConfigManager(QObject *parent = nullptr);
@@ -93,6 +97,12 @@ public:
 	obs_data_array_t *getSmartContextRules() const;
 	void saveSmartContextRules(obs_data_array_t *rulesArray);
 	static obs_data_array_t *createDefaultSmartContextRules();
+
+	// Update check against the GitHub releases of the fork
+	bool getUpdateCheckEnabled() const;
+	void setUpdateCheckEnabled(bool value);
+	long long getUpdateCheckLast() const;
+	void setUpdateCheckLast(long long secondsSinceEpoch);
 
 	static constexpr const char *SCAN_STEAM_KEY = "scan_steam";
 	static constexpr const char *SCAN_EPIC_KEY = "scan_epic";

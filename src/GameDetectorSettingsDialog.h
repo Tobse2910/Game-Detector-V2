@@ -41,6 +41,7 @@ private:
 	QComboBox *actionComboBox = nullptr;
 	QCheckBox *unifiedAuthCheckbox = nullptr;
 	QCheckBox *autoUpdateOnlyWhileStreamingCheckbox = nullptr;
+	QCheckBox *updateCheckCheckbox = nullptr;
 	QCheckBox *scanSteamCheckbox = nullptr;
 	QCheckBox *scanEpicCheckbox = nullptr;
 	QCheckBox *scanGogCheckbox = nullptr;
