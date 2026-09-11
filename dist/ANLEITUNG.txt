@@ -1,0 +1,127 @@
+===============================================================================
+  GAME DETECTOR  -  SMART CONTEXT MODE  fuer OBS Studio
+===============================================================================
+
+  Erkennt, welche Anwendung du gerade wirklich benutzt, und setzt danach
+  automatisch deine Twitch-Kategorie UND deinen Streamtitel.
+
+  Spielst du -> Kategorie ist das Spiel.
+  Bist du im Browser -> Just Chatting.
+  Bist du in Discord oder OBS -> es passiert nichts.
+
+
+-------------------------------------------------------------------------------
+  INSTALLATION
+-------------------------------------------------------------------------------
+
+  1. OBS Studio komplett schliessen
+
+  2. Doppelklick auf:   Installieren.bat
+
+  3. Windows-Abfrage mit "Ja" bestaetigen
+     (Das Plugin muss in den OBS-Programmordner, dafuer braucht Windows
+      Administratorrechte.)
+
+  Zum Entfernen spaeter: Deinstallieren.bat
+  Deine Einstellungen bleiben dabei erhalten.
+
+
+-------------------------------------------------------------------------------
+  EINRICHTUNG  (einmalig, dauert 2 Minuten)
+-------------------------------------------------------------------------------
+
+  1. OBS starten
+
+  2. Menue "Docks"  ->  Haken bei "Game Detector"
+     (Neue Docks sind in OBS immer erst versteckt.)
+
+  3. Im Dock auf das Bildschirm-Symbol (Einstellungen):
+
+       - Plattform-Aktion auf  "Kategorie ueber API"  stellen
+         WICHTIG: Der andere Modus schickt nur einen Chat-Befehl an einen
+         Bot und kann den Streamtitel NICHT setzen.
+
+       - Haken bei  "Gemeinsame Berechtigungen"
+
+       - "Twitch: Verbinden"  ->  im Browser autorisieren
+         (Du hast 30 Sekunden Zeit.)
+
+       - OK
+
+  4. Im Dock:
+
+       - Haken bei  "Smart Context Mode"
+       - Verzoegerung waehlen (30 Sekunden bis 10 Minuten)
+
+  Fertig. Ab jetzt laeuft es von allein.
+
+
+-------------------------------------------------------------------------------
+  EIGENE REGELN
+-------------------------------------------------------------------------------
+
+  Einstellungen -> "Smart-Context-Regeln verwalten"
+
+  Dort ordnest du Programme einer Kategorie zu und kannst optional einen
+  Streamtitel hinterlegen.
+
+  TIPP: Programmnamen sind selten das, was man erwartet.
+  Starte das Programm, schau im Dock bei "Aktive Anwendung" nach - dort
+  steht der echte Name.
+
+  Platzhalter im Titel:  {game}  {category}  {app}  {window}
+
+
+-------------------------------------------------------------------------------
+  PROGRAMME IGNORIEREN
+-------------------------------------------------------------------------------
+
+  Button "Programme ignorieren..." direkt im Dock.
+
+  Ignorierte Programme sind komplett neutral: Ist eins im Vordergrund,
+  passiert gar nichts. Du kannst stundenlang in Discord sein, ohne dass
+  sich deine Kategorie aendert.
+
+  Vorbelegt sind u.a. Discord, OBS, Explorer, Spotify, Wave Link,
+  Stream Deck sowie die Steam-, Epic- und Rockstar-Launcher.
+
+  "Aktuelles Programm hinzufuegen" nimmt das Fenster, das gerade vorne
+  war - so musst du keinen Namen raten.
+
+
+-------------------------------------------------------------------------------
+  GUT ZU WISSEN
+-------------------------------------------------------------------------------
+
+  * Nur Windows. OBS 28 oder neuer.
+
+  * Das Panel "Streaminformation" in OBS aktualisiert sich NICHT.
+    Das ist OBS' eigenes Eingabeformular, da kommt kein Plugin ran.
+    Es zeigt alte Werte, und "Fertig" wuerde diese alten Werte an Twitch
+    zurueckschicken. Schau stattdessen ins Game-Detector-Dock, dort
+    stehen Kategorie und Titel live.
+
+  * Kurzes Alt-Tab unter 60 Sekunden wirft den Timer nicht weg.
+    Nach jedem Wechsel sind mindestens 60 Sekunden Ruhe.
+
+  * "Kategorie sperren" im Dock blockiert jede automatische Aenderung.
+
+
+-------------------------------------------------------------------------------
+  CREDITS UND LIZENZ
+-------------------------------------------------------------------------------
+
+  Urspruengliches Plugin:
+    Fabio F. Magalhaes (FabioZumbi12)
+    https://github.com/FabioZumbi12/game-detector
+
+  Smart Context Mode:
+    Tobias Schlothane
+    https://it-kicodebyts.com
+
+  Lizenz: GNU General Public License v2.0  (siehe LICENSE.txt)
+
+  Wenn du dieses Plugin weitergibst, musst du den Quelltext mitliefern
+  oder verlinken. Das verlangt die GPL.
+
+===============================================================================

@@ -1,7 +1,7 @@
 @echo off
 title Game Detector - Smart Context Mode installieren
 
-rem Startet install.ps1 mit Administratorrechten. Das Plugin muss in den
+rem Startet plugin\install.ps1 mit Administratorrechten. Das Plugin muss in den
 rem OBS-Programmordner, und dorthin darf nur ein Administrator schreiben.
 
 net session >nul 2>&1
@@ -14,4 +14,4 @@ if %errorlevel% neq 0 (
     exit /b
 )
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0plugin\install.ps1"

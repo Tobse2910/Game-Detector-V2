@@ -11,4 +11,4 @@ if %errorlevel% neq 0 (
     exit /b
 )
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0uninstall.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0plugin\uninstall.ps1"
