@@ -63,11 +63,20 @@ try {
     Abbruch "Das Update-Paket liess sich nicht entpacken: $($_.Exception.Message)"
 }
 
-$neueDll = Join-Path $temp "obs-plugins\64bit\game-detector.dll"
-$neueDaten = Join-Path $temp "data\obs-plugins\game-detector"
+# Die DLL wird gesucht statt an einer festen Stelle erwartet: im Archiv liegt sie
+# unter plugin\obs-plugins\64bit\, aber dieser Helfer laeuft auch noch, wenn eine
+# spaetere Version das Archiv anders aufbaut.
+$gefunden = Get-ChildItem -LiteralPath $temp -Filter "game-detector.dll" -Recurse -File |
+            Select-Object -First 1
+if (-not $gefunden) { Abbruch "Im Update-Paket fehlt game-detector.dll." }
 
-# Nichts austauschen, wenn das Paket nicht das ist, was es sein soll.
-if (-not (Test-Path -LiteralPath $neueDll)) { Abbruch "Im Update-Paket fehlt game-detector.dll." }
+$neueDll = $gefunden.FullName
+
+# Die Sprachdateien liegen relativ zur DLL: <basis>\obs-plugins\64bit\game-detector.dll
+# und <basis>\data\obs-plugins\game-detector
+$basis = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $neueDll))
+$neueDaten = Join-Path $basis "data\obs-plugins\game-detector"
+
 if (-not (Test-Path -LiteralPath $neueDaten)) { Abbruch "Im Update-Paket fehlen die Sprachdateien." }
 
 Zeile "  Update-Paket geprueft." Green

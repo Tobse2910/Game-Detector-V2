@@ -36,28 +36,50 @@ jobs:
       - name: Build
         run: cmake --build build_x64 --config RelWithDebInfo --target GameDetector
 
-      # The layout here is what dist/install.ps1 expects next to itself: it copies
-      # obs-plugins\64bit\game-detector.dll and data\obs-plugins\game-detector\* into
-      # the OBS folder it finds.
+      # The archive root holds only what a user should click: the two launchers, the
+      # guide and the license. Everything technical goes into plugin\, which is where
+      # Installieren.bat looks for install.ps1, and install.ps1 in turn copies
+      # obs-plugins\64bit\game-detector.dll and data\obs-plugins\game-detector\*
+      # from next to itself.
       - name: Assemble package
         shell: pwsh
         run: |
           $stage = "package"
-          New-Item -ItemType Directory -Force -Path "$stage/obs-plugins/64bit" | Out-Null
-          New-Item -ItemType Directory -Force -Path "$stage/data/obs-plugins/game-detector" | Out-Null
+          $plugin = "$stage/plugin"
+          New-Item -ItemType Directory -Force -Path "$plugin/obs-plugins/64bit" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$plugin/data/obs-plugins/game-detector" | Out-Null
 
-          Copy-Item "build_x64/RelWithDebInfo/game-detector.dll" "$stage/obs-plugins/64bit/" -Force
-          Copy-Item "data/*" "$stage/data/obs-plugins/game-detector/" -Recurse -Force
-          Copy-Item "dist/*" "$stage/" -Force
+          Copy-Item "build_x64/RelWithDebInfo/game-detector.dll" "$plugin/obs-plugins/64bit/" -Force
+          Copy-Item "data/*" "$plugin/data/obs-plugins/game-detector/" -Recurse -Force
+          Copy-Item "dist/install.ps1", "dist/uninstall.ps1" "$plugin/" -Force
           # LICENSE and FORK-CHANGES ship with the binary because GPL-2.0 asks for
           # the license text and for the changes against upstream to be marked.
-          Copy-Item "INSTALL.md", "README.md", "LICENSE", "FORK-CHANGES.md" "$stage/" -Force
+          Copy-Item "INSTALL.md", "README.md", "FORK-CHANGES.md" "$plugin/" -Force
+          Copy-Item "dist/Installieren.bat", "dist/Deinstallieren.bat", "dist/ANLEITUNG.txt", "LICENSE" "$stage/" -Force
 
-          if (-not (Test-Path "$stage/obs-plugins/64bit/game-detector.dll")) {
-            throw "game-detector.dll missing from the package"
+          # Checked one by one, because a package that merely contains the right files
+          # in the wrong places still leaves the launcher pointing at nothing.
+          $required = @(
+            "Installieren.bat",
+            "Deinstallieren.bat",
+            "ANLEITUNG.txt",
+            "plugin/install.ps1",
+            "plugin/uninstall.ps1",
+            "plugin/obs-plugins/64bit/game-detector.dll",
+            "plugin/data/obs-plugins/game-detector/update.ps1",
+            "plugin/data/obs-plugins/game-detector/locale/de-DE.ini"
+          )
+          foreach ($path in $required) {
+            if (-not (Test-Path (Join-Path $stage $path))) { throw "missing from the package: $path" }
           }
-          if (-not (Test-Path "$stage/Installieren.bat")) {
-            throw "Installieren.bat missing from the package"
+
+          # The launchers hardcode plugin\, so verify the path they actually call.
+          foreach ($launcher in @("Installieren.bat", "Deinstallieren.bat")) {
+            $text = Get-Content (Join-Path $stage $launcher) -Raw
+            foreach ($match in [regex]::Matches($text, '%~dp0([^"]+)')) {
+              $called = Join-Path $stage $match.Groups[1].Value
+              if (-not (Test-Path $called)) { throw "$launcher calls a path that is not in the package: $($match.Groups[1].Value)" }
+            }
           }
 
           $name = if ($env:GITHUB_REF_NAME -match '^v') { $env:GITHUB_REF_NAME } else { "dev" }
