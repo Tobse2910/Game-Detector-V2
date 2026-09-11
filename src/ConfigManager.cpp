@@ -576,8 +576,10 @@ obs_data_array_t *ConfigManager::createDefaultSmartContextRules()
 {
 	obs_data_array_t *rules = obs_data_array_create();
 
-	static const char *const TITLE_CODING = "Coding & Development | !music | !PartyFlow";
-	static const char *const TITLE_CHATTING = "Just Chatting | !music | !wunsch | !PartyFlow";
+	// Title templates ship empty on purpose: an empty template leaves the stream
+	// title alone, so a fresh install never overwrites someone's title with a
+	// guess. Users fill these in themselves in the rule editor.
+	static const char *const NO_TITLE = "";
 	static const char *const CATEGORY_CODING = "Software and Game Development";
 	static const char *const CATEGORY_CHATTING = "Just Chatting";
 
@@ -604,29 +606,26 @@ obs_data_array_t *ConfigManager::createDefaultSmartContextRules()
 		pushRule(rules, makeRule(process, "", "", true, 90));
 
 	// Games / explicit category rules.
-	// The shipped executable is WardogsClient-Win64-Shipping.exe; the wildcard also
-	// covers a launcher or a renamed build.
-	pushRule(rules, makeRule("Wardogs*.exe", "WARDOGS", "WARDOGS | !music | web ansicht !wunsch | !PartyFlow",
-				 false, 50));
-	pushRule(rules, makeRule("FiveM.exe", "Grand Theft Auto V",
-				 "BSG RP | Boris Brown | !music | !wunsch | !PartyFlow", false, 50));
-	pushRule(rules, makeRule("FiveM_*.exe", "Grand Theft Auto V",
-				 "BSG RP | Boris Brown | !music | !wunsch | !PartyFlow", false, 50));
+	// Games. The wildcards matter: the shipped executables are rarely what you
+	// would guess (WardogsClient-Win64-Shipping.exe, FiveM_b3095_GTAProcess.exe).
+	pushRule(rules, makeRule("Wardogs*.exe", "WARDOGS", NO_TITLE, false, 50));
+	pushRule(rules, makeRule("FiveM.exe", "Grand Theft Auto V", NO_TITLE, false, 50));
+	pushRule(rules, makeRule("FiveM_*.exe", "Grand Theft Auto V", NO_TITLE, false, 50));
 
 	// Development tools.
-	pushRule(rules, makeRule("Code.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
-	pushRule(rules, makeRule("Code - Insiders.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
-	pushRule(rules, makeRule("devenv.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
-	pushRule(rules, makeRule("idea64.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
-	pushRule(rules, makeRule("pycharm64.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
-	pushRule(rules, makeRule("webstorm64.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
-	pushRule(rules, makeRule("rider64.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
-	pushRule(rules, makeRule("studio64.exe", CATEGORY_CODING, TITLE_CODING, false, 40));
+	pushRule(rules, makeRule("Code.exe", CATEGORY_CODING, NO_TITLE, false, 40));
+	pushRule(rules, makeRule("Code - Insiders.exe", CATEGORY_CODING, NO_TITLE, false, 40));
+	pushRule(rules, makeRule("devenv.exe", CATEGORY_CODING, NO_TITLE, false, 40));
+	pushRule(rules, makeRule("idea64.exe", CATEGORY_CODING, NO_TITLE, false, 40));
+	pushRule(rules, makeRule("pycharm64.exe", CATEGORY_CODING, NO_TITLE, false, 40));
+	pushRule(rules, makeRule("webstorm64.exe", CATEGORY_CODING, NO_TITLE, false, 40));
+	pushRule(rules, makeRule("rider64.exe", CATEGORY_CODING, NO_TITLE, false, 40));
+	pushRule(rules, makeRule("studio64.exe", CATEGORY_CODING, NO_TITLE, false, 40));
 
 	// Browsers.
-	pushRule(rules, makeRule("firefox.exe", CATEGORY_CHATTING, TITLE_CHATTING, false, 10));
-	pushRule(rules, makeRule("chrome.exe", CATEGORY_CHATTING, TITLE_CHATTING, false, 10));
-	pushRule(rules, makeRule("msedge.exe", CATEGORY_CHATTING, TITLE_CHATTING, false, 10));
+	pushRule(rules, makeRule("firefox.exe", CATEGORY_CHATTING, NO_TITLE, false, 10));
+	pushRule(rules, makeRule("chrome.exe", CATEGORY_CHATTING, NO_TITLE, false, 10));
+	pushRule(rules, makeRule("msedge.exe", CATEGORY_CHATTING, NO_TITLE, false, 10));
 
 	return rules;
 }
