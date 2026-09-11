@@ -566,8 +566,7 @@ obs_data_array_t *ConfigManager::createDefaultSmartContextRules()
 					      "obs64.exe",
 					      "obs32.exe",
 					      "explorer.exe",
-					      "WaveLink.exe",
-					      "Elgato Wave Link.exe",
+					      "*WaveLink*.exe", // Elgato.WaveLink.exe, WaveLink.exe, …
 					      "StreamDeck.exe",
 					      "Spotify.exe",
 					      "steam.exe",
@@ -575,13 +574,18 @@ obs_data_array_t *ConfigManager::createDefaultSmartContextRules()
 					      "EpicGamesLauncher.exe",
 					      "Launcher.exe", // Rockstar Games Launcher
 					      "RockstarService.exe",
-					      "SocialClubHelper.exe"};
+					      "SocialClubHelper.exe",
+					      "Medal.exe",
+					      "NVIDIA Overlay.exe",
+					      "OBSBOT_Main.exe"};
 	for (const char *process : ignored)
 		pushRule(rules, makeRule(process, "", "", true, 90));
 
 	// Games / explicit category rules.
-	pushRule(rules,
-		 makeRule("WARDOGS.exe", "WARDOGS", "WARDOGS | !music | web ansicht !wunsch | !PartyFlow", false, 50));
+	// The shipped executable is WardogsClient-Win64-Shipping.exe; the wildcard also
+	// covers a launcher or a renamed build.
+	pushRule(rules, makeRule("Wardogs*.exe", "WARDOGS", "WARDOGS | !music | web ansicht !wunsch | !PartyFlow",
+				 false, 50));
 	pushRule(rules, makeRule("FiveM.exe", "Grand Theft Auto V",
 				 "BSG RP | Boris Brown | !music | !wunsch | !PartyFlow", false, 50));
 	pushRule(rules, makeRule("FiveM_*.exe", "Grand Theft Auto V",
