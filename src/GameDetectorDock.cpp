@@ -54,6 +54,10 @@ GameDetectorDock::GameDetectorDock(QWidget *parent) : QWidget(parent)
 	scrollArea->setWidget(content);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout(content);
+	// A little air at the top: the labels below carry negative top margins from
+	// upstream, which made the first line sit right against the title bar once the
+	// scroll area removed the dock's own padding.
+	mainLayout->setContentsMargins(9, 12, 9, 9);
 
 	buildUpdateNotice(mainLayout);
 

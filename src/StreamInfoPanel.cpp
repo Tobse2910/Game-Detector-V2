@@ -287,6 +287,7 @@ void StreamInfoPanel::reload(bool force)
 	// The whole point of pausing here: an automatic reload must never wipe out a
 	// title someone is halfway through typing.
 	if (dirty && !force) {
+		blog(LOG_INFO, "[GameDetector/StreamInfo] Reload skipped, there are unsent edits.");
 		showStatus(obs_module_text("StreamInfo.Status.SkippedPending"));
 		return;
 	}
@@ -294,6 +295,8 @@ void StreamInfoPanel::reload(bool force)
 	if (reloadWatcher->isRunning())
 		return;
 
+	blog(LOG_INFO, "[GameDetector/StreamInfo] Reading the channel information from Twitch%s.",
+	     force ? " (requested)" : " after a change");
 	showStatus(obs_module_text("StreamInfo.Status.Loading"));
 	reloadWatcher->setFuture(TwitchAuthManager::get().getChannelInfo());
 }
@@ -303,9 +306,14 @@ void StreamInfoPanel::onReloadFinished()
 	const TwitchAuthManager::ChannelInfo info = reloadWatcher->result();
 
 	if (!info.valid) {
+		blog(LOG_WARNING, "[GameDetector/StreamInfo] Reading the channel information failed: %s",
+		     info.error.toStdString().c_str());
 		showStatus(QString(obs_module_text("StreamInfo.Status.LoadFailed")).arg(info.error), true);
 		return;
 	}
+
+	blog(LOG_INFO, "[GameDetector/StreamInfo] Loaded: category '%s', %d tag(s), language %s.",
+	     info.gameName.toStdString().c_str(), (int)info.tags.size(), info.language.toStdString().c_str());
 
 	lastLoaded = info;
 	fillFrom(info);
@@ -397,8 +405,10 @@ void StreamInfoPanel::applyBoxArt(const QString &localFile)
 		return;
 
 	QPixmap pixmap;
-	if (!pixmap.load(localFile))
+	if (!pixmap.load(localFile)) {
+		blog(LOG_INFO, "[GameDetector/StreamInfo] The category image could not be loaded.");
 		return;
+	}
 
 	categoryBoxArt->setPixmap(pixmap.scaled(52, 72, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 }
@@ -595,6 +605,9 @@ void StreamInfoPanel::onApplyFinished()
 		reload(true);
 		return;
 	}
+
+	blog(LOG_WARNING, "[GameDetector/StreamInfo] Sending the channel information failed (%s).",
+	     result == TwitchAuthManager::AuthError ? "authentication" : "rejected");
 
 	applyButton->setEnabled(true);
 	showStatus(result == TwitchAuthManager::AuthError ? obs_module_text("StreamInfo.Status.AuthError")
