@@ -343,9 +343,12 @@ bool SmartContextManager::pushCategory(const QString &category, const QString &t
 	if (!sent && !alreadyLive)
 		return false;
 
-	blog(LOG_INFO, "[GameDetector/SmartContext] %s switch via %s -> category '%s'.",
-	     manual ? "Manual" : "Automatic", currentProcess.toStdString().c_str(),
-	     category.toStdString().c_str());
+	if (manual)
+		blog(LOG_INFO, "[GameDetector/SmartContext] Manual switch -> category '%s'.",
+		     category.toStdString().c_str());
+	else
+		blog(LOG_INFO, "[GameDetector/SmartContext] Automatic switch via %s -> category '%s'.",
+		     currentProcess.toStdString().c_str(), category.toStdString().c_str());
 
 	currentAppliedCategory = category;
 	appliedAtMs = now;

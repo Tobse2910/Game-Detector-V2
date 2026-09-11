@@ -24,7 +24,11 @@ void ConfigManager::load()
 		obs_data_set_string(settings, COMMAND_NO_GAME_KEY, "!setgame just chatting");
 		obs_data_set_bool(settings, EXECUTE_AUTOMATICALLY_KEY, false);
 		obs_data_set_bool(settings, BLOCK_AUTO_UPDATE_WHILE_STREAMING_KEY, false);
-		obs_data_set_int(settings, ACTION_MODE_KEY, 0);
+		// Match the defaults an upgraded config gets below: change the category
+		// through the API rather than posting a chat command for a bot to pick up.
+		// Smart Context Mode is useless without it.
+		obs_data_set_int(settings, ACTION_MODE_KEY, 1);
+		obs_data_set_bool(settings, TWITCH_UNIFIED_AUTH_KEY, true);
 		obs_data_set_bool(settings, SCAN_STEAM_KEY, true);
 		obs_data_set_bool(settings, SCAN_EPIC_KEY, true);
 		obs_data_set_bool(settings, SCAN_GOG_KEY, true);
@@ -576,8 +580,8 @@ obs_data_array_t *ConfigManager::createDefaultSmartContextRules()
 		pushRule(rules, makeRule(process, "", "", true, 90));
 
 	// Games / explicit category rules.
-	pushRule(rules, makeRule("WARDOGS.exe", "WARDOGS", "WARDOGS | !music | Web Ansicht: !wunsch | !PartyFlow",
-				 false, 50));
+	pushRule(rules,
+		 makeRule("WARDOGS.exe", "WARDOGS", "WARDOGS | !music | web ansicht !wunsch | !PartyFlow", false, 50));
 	pushRule(rules, makeRule("FiveM.exe", "Grand Theft Auto V",
 				 "BSG RP | Boris Brown | !music | !wunsch | !PartyFlow", false, 50));
 	pushRule(rules, makeRule("FiveM_*.exe", "Grand Theft Auto V",
