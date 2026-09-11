@@ -37,7 +37,7 @@ Contributions and PRs are welcome!
 
 ## 🧠 Smart Context Mode (fork)
 
-![Game Detector – Smart Context Mode](img/smart-context-mode.png)
+![Game Detector - Smart Context Mode](img/smart-context-mode.png)
 
 This branch is a modified version that adds **Smart Context Mode**: instead of only
 detecting *that* a game is running, it evaluates the Windows **foreground window** to
@@ -47,7 +47,7 @@ stream title only after that application has been in front for a configurable ti
 
 **What it adds:**
 
-- Foreground window detection — not "is a game running" but "what am I actually using"
+- Foreground window detection - not "is a game running" but "what am I actually using"
 - Category **and** stream title set together through the Twitch API
 - Editable rule list: process (with `*` / `?` wildcards), optional window title match,
   category, title template, per-rule delay, ignore flag, priority
@@ -62,7 +62,7 @@ stream title only after that application has been in front for a configurable ti
 📄 **Installation and setup: [INSTALL.md](INSTALL.md)** (German)
 📄 **Full list of changes: [FORK-CHANGES.md](FORK-CHANGES.md)**
 
-Windows only — the foreground detection uses Windows APIs. Requires OBS 28+
+Windows only - the foreground detection uses Windows APIs. Requires OBS 28+
 (tested on 32.2.1).
 
 ---
@@ -72,7 +72,7 @@ Windows only — the foreground detection uses Windows APIs. Requires OBS 28+
 **Original plugin** by **Fábio F. Magalhães (FabioZumbi12)**
 <https://github.com/FabioZumbi12/game-detector>
 
-**Smart Context Mode** by **Tobias Schlothane** — [it-kicodebyts.com](https://it-kicodebyts.com)
+**Smart Context Mode** by **Tobias Schlothane** - [it-kicodebyts.com](https://it-kicodebyts.com)
 Designed, specified and tested by Tobias Schlothane, implemented together with
 [Claude Code](https://claude.com/claude-code) (Anthropic).
 

@@ -124,7 +124,12 @@
 
   Lizenz: GNU General Public License v2.0  (siehe LICENSE.txt)
 
-  Wenn du dieses Plugin weitergibst, musst du den Quelltext mitliefern
-  oder verlinken. Das verlangt die GPL.
+  QUELLCODE:
+    https://github.com/Tobse2910/Game-Detector-V2
+
+  Die GPL gibt dir das Recht, den kompletten Quelltext zu bekommen,
+  ihn anzusehen, zu veraendern und weiterzugeben. Er liegt unter dem
+  Link oben. Wenn du dieses Plugin weitergibst, musst du diesen Link
+  mitgeben.
 
 ===============================================================================
