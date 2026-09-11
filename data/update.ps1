@@ -33,9 +33,6 @@ $ui = [hashtable]::Synchronized(@{
     Beenden  = $false
 })
 
-$uiThread = $null
-$uiRunspace = $null
-
 function Start-Oberflaeche {
     $xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -43,6 +40,38 @@ function Start-Oberflaeche {
         Title="Game Detector" Height="232" Width="460"
         WindowStyle="None" ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
         Background="#0F0F0F" Topmost="True">
+  <Window.Resources>
+    <!-- Eigenes Aussehen, weil der Standard-Button beim Ueberfahren in Windows-Blau
+         umschlaegt und die gesetzte Farbe ueberdeckt. -->
+    <Style x:Key="FlacherButton" TargetType="Button">
+      <Setter Property="Foreground" Value="#F2F2F2"/>
+      <Setter Property="Background" Value="#262626"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="FontFamily" Value="Segoe UI"/>
+      <Setter Property="FontSize" Value="12.5"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Flaeche" Background="{TemplateBinding Background}" CornerRadius="4">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Flaeche" Property="Background" Value="#E07A35"/>
+                <Setter Property="Foreground" Value="#0F0F0F"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Flaeche" Property="Background" Value="#B85F24"/>
+                <Setter Property="Foreground" Value="#0F0F0F"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </Window.Resources>
+
   <Border BorderBrush="#262626" BorderThickness="1">
     <Grid Margin="28,24,28,24">
       <Grid.RowDefinitions>
@@ -71,8 +100,7 @@ function Start-Oberflaeche {
         </Border>
         <Button x:Name="Schliessen" Content="Schliessen" Margin="0,18,0,0" Width="112"
                 Height="30" HorizontalAlignment="Right" Visibility="Collapsed"
-                Foreground="#F2F2F2" Background="#2A2A2A" BorderThickness="0"
-                FontFamily="Segoe UI" FontSize="12.5" Cursor="Hand"/>
+                Style="{StaticResource FlacherButton}"/>
       </StackPanel>
     </Grid>
   </Border>
