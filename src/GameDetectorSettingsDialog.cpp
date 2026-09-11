@@ -17,6 +17,8 @@
 #include <QDesktopServices>
 #include <QFormLayout>
 #include <QGroupBox>
+#include <QTimer>
+#include <QMessageBox>
 #include <QComboBox>
 #include <QSpinBox>
 #include <QLineEdit>
@@ -183,10 +185,57 @@ GameDetectorSettingsDialog::GameDetectorSettingsDialog(QWidget *parent) : QDialo
 	updateLayout->addWidget(updateCheckCheckbox);
 	updateLayout->addStretch(1);
 
+	// Ohne diesen Knopf gaebe es keinen Weg, jetzt nachzusehen: der Check laeuft
+	// hoechstens einmal in 24 Stunden, und wer gerade hoert, dass es eine neue
+	// Version gibt, moechte nicht bis morgen warten.
+	checkUpdateButton = new QPushButton(obs_module_text("Settings.UpdateCheck.Now"));
+	checkUpdateButton->setCursor(Qt::PointingHandCursor);
+	checkUpdateButton->setToolTip(obs_module_text("Settings.UpdateCheck.Now.Tooltip"));
+	updateLayout->addWidget(checkUpdateButton);
+
 	QLabel *versionLabel = new QLabel(QString(obs_module_text("Settings.Version")).arg(UpdateChecker::currentVersion()));
 	versionLabel->setStyleSheet("color: gray;");
 	updateLayout->addWidget(versionLabel);
 	mainLayout->addLayout(updateLayout);
+
+	auto knopfZuruecksetzen = [this]() {
+		if (!checkUpdateButton)
+			return;
+		checkUpdateButton->setEnabled(true);
+		checkUpdateButton->setText(obs_module_text("Settings.UpdateCheck.Now"));
+	};
+
+	connect(checkUpdateButton, &QPushButton::clicked, this, [this]() {
+		checkUpdateButton->setEnabled(false);
+		checkUpdateButton->setText(obs_module_text("Settings.UpdateCheck.Searching"));
+
+		// force: ignoriert das Tagesintervall und die Checkbox, weil hier jemand
+		// ausdruecklich danach gefragt hat.
+		UpdateChecker::get().checkNow(true);
+	});
+
+	// Jeder Ausgang muss beim Knopf ankommen, sonst bleibt "Suche..." stehen und man
+	// weiss nicht, ob ueberhaupt etwas passiert ist.
+	connect(&UpdateChecker::get(), &UpdateChecker::upToDate, this,
+		[this, knopfZuruecksetzen](const QString &version) {
+			knopfZuruecksetzen();
+			if (isVisible())
+				QMessageBox::information(this, obs_module_text("Settings.UpdateCheck.Now"),
+							 QString(obs_module_text("Settings.UpdateCheck.UpToDate"))
+								 .arg(version));
+		});
+
+	connect(&UpdateChecker::get(), &UpdateChecker::updateAvailable, this,
+		[this, knopfZuruecksetzen](const QString &version, const QString &, const QString &) {
+			knopfZuruecksetzen();
+			if (isVisible())
+				QMessageBox::information(this, obs_module_text("Settings.UpdateCheck.Now"),
+							 QString(obs_module_text("Settings.UpdateCheck.Found"))
+								 .arg(version));
+		});
+
+	connect(&UpdateChecker::get(), &UpdateChecker::updateFailed, this,
+		[knopfZuruecksetzen](const QString &) { knopfZuruecksetzen(); });
 
 	mainLayout->addStretch(1);
 

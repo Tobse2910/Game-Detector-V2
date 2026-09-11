@@ -154,6 +154,7 @@ void UpdateChecker::checkNow(bool force)
 		return;
 
 	ConfigManager::get().setUpdateCheckLast(now);
+	forcedCheck = force;
 
 	const QString url = QString::fromUtf8(RELEASE_API_URL);
 
@@ -220,8 +221,14 @@ void UpdateChecker::onResultReady()
 		return;
 
 	const QStringList result = watcher->result();
-	if (result.size() < 3)
+	if (result.size() < 3) {
+		// Kein Ergebnis: kein Release, kein Netz, oder die API hat abgelehnt. Der
+		// Grund steht im Log. Gemeldet wird nur, wenn jemand ausdruecklich
+		// gefragt hat, sonst kaeme bei jedem Start ohne Internet eine Meldung.
+		if (forcedCheck)
+			emit updateFailed(obs_module_text("Update.Error.CheckFailed"));
 		return;
+	}
 
 	const QString tag = result.at(0);
 	const QString page = result.at(1);
@@ -231,6 +238,7 @@ void UpdateChecker::onResultReady()
 	if (compareVersions(running, tag) >= 0) {
 		blog(LOG_INFO, "[GameDetector/UpdateChecker] Version %s is up to date (newest release: %s).",
 		     running.toStdString().c_str(), tag.toStdString().c_str());
+		emit upToDate(running);
 		return;
 	}
 

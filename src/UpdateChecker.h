@@ -60,6 +60,10 @@ signals:
 	// direct download URL of the ZIP asset (empty when the release has no ZIP).
 	void updateAvailable(const QString &version, const QString &url, const QString &downloadUrl);
 
+	// The check ran and found nothing newer. Needed because someone who presses
+	// "check now" has to be told the result either way.
+	void upToDate(const QString &runningVersion);
+
 	// Progress text for the dock, already translated.
 	void updateStage(const QString &text);
 
@@ -92,6 +96,10 @@ private:
 	DownloadAbortFlag downloadAbort;
 	bool shuttingDown = false;
 	bool updating = false;
+	// Ob der laufende Check von Hand angefordert wurde. Nur dann wird ein
+	// Fehlschlag gemeldet: beim automatischen Check waere eine Meldung bei jedem
+	// OBS-Start ohne Internet eine Zumutung.
+	bool forcedCheck = false;
 };
 
 #endif // UPDATECHECKER_H

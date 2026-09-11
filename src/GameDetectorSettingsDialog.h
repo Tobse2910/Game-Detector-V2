@@ -42,6 +42,7 @@ private:
 	QCheckBox *unifiedAuthCheckbox = nullptr;
 	QCheckBox *autoUpdateOnlyWhileStreamingCheckbox = nullptr;
 	QCheckBox *updateCheckCheckbox = nullptr;
+	QPushButton *checkUpdateButton = nullptr;
 	QCheckBox *scanSteamCheckbox = nullptr;
 	QCheckBox *scanEpicCheckbox = nullptr;
 	QCheckBox *scanGogCheckbox = nullptr;
