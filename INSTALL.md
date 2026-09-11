@@ -195,6 +195,8 @@ macOS läuft das restliche Plugin, aber Smart Context erkennt nichts.
 <https://github.com/FabioZumbi12/game-detector>
 
 **Smart Context Mode:** **Tobias Schlothane** — [it-kicodebyts.com](https://it-kicodebyts.com)
+Konzipiert, spezifiziert und getestet von Tobias Schlothane, umgesetzt gemeinsam mit
+[Claude Code](https://claude.com/claude-code) (Anthropic).
 
 Lizenz: **GNU General Public License v2.0**, wie das Original. Alle Änderungen sind in
 [FORK-CHANGES.md](FORK-CHANGES.md) dokumentiert.

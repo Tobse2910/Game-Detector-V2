@@ -71,6 +71,8 @@ Windows only — the foreground detection uses Windows APIs. Requires OBS 28+
 <https://github.com/FabioZumbi12/game-detector>
 
 **Smart Context Mode** by **Tobias Schlothane** — [it-kicodebyts.com](https://it-kicodebyts.com)
+Designed, specified and tested by Tobias Schlothane, implemented together with
+[Claude Code](https://claude.com/claude-code) (Anthropic).
 
 Licensed under the **GNU General Public License v2.0**, like the original.
 If you pass this plugin on, you have to pass the source along with it.

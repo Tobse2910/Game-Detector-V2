@@ -119,6 +119,9 @@
     Tobias Schlothane
     https://it-kicodebyts.com
 
+    Konzipiert, spezifiziert und getestet von Tobias Schlothane,
+    umgesetzt gemeinsam mit Claude Code (Anthropic).
+
   Lizenz: GNU General Public License v2.0  (siehe LICENSE.txt)
 
   Wenn du dieses Plugin weitergibst, musst du den Quelltext mitliefern

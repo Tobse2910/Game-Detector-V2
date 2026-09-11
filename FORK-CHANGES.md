@@ -9,6 +9,8 @@ copyright notices and the in-app "Developed by FabioZumbi12" credits are unchang
 
 - **Upstream base:** `v0.2.5` + 3 commits (`a7d06ad`, 2026-02-23)
 - **Modified by:** **Tobias Schlothane** — [it-kicodebyts.com](https://it-kicodebyts.com)
+  (designed, specified and tested by Tobias Schlothane; implemented together with
+  [Claude Code](https://claude.com/claude-code))
 - **Date of change:** 2026-09-11
 - **Branch:** `feature/smart-context-mode`
 
