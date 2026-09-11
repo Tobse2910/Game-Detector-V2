@@ -34,10 +34,29 @@ $aufgabe = "GameDetectorV2-ReleaseWatch"
 
 . "$PSScriptRoot\package.ps1"
 
-function Schritt($text) { Write-Host ""; Write-Host "== $text" -ForegroundColor Cyan }
-function Info($text) { Write-Host "   $text" -ForegroundColor Gray }
-function Gut($text) { Write-Host "   $text" -ForegroundColor Green }
-function Warnung($text) { Write-Host "   $text" -ForegroundColor Yellow }
+# Als geplante Aufgabe laeuft das Skript versteckt. Ohne Protokoll waere nicht zu
+# sehen, ob es ueberhaupt lief, geschweige denn warum es abgebrochen hat.
+$logDatei = Join-Path $env:LOCALAPPDATA "game-detector-release-watch.log"
+
+function Protokoll($zeile) {
+    try {
+        $stempel = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        Add-Content -LiteralPath $logDatei -Value "$stempel  $zeile" -Encoding UTF8
+    } catch {}
+}
+
+function Schritt($text) { Write-Host ""; Write-Host "== $text" -ForegroundColor Cyan; Protokoll "== $text" }
+function Info($text) { Write-Host "   $text" -ForegroundColor Gray; Protokoll "   $text" }
+function Gut($text) { Write-Host "   $text" -ForegroundColor Green; Protokoll "   $text" }
+function Warnung($text) { Write-Host "   $text" -ForegroundColor Yellow; Protokoll "   ACHTUNG: $text" }
+
+# Das Protokoll nicht unbegrenzt wachsen lassen.
+try {
+    if ((Test-Path $logDatei) -and (Get-Item $logDatei).Length -gt 512KB) {
+        $behalten = Get-Content $logDatei -Tail 400
+        Set-Content -LiteralPath $logDatei -Value $behalten -Encoding UTF8
+    }
+} catch {}
 
 function Extern {
     param([string] $Datei, [string[]] $Argumente)
@@ -60,33 +79,30 @@ function Extern {
 if ($Einrichten) {
     Schritt "Als Windows-Aufgabe registrieren"
 
+    # schtasks.exe und nicht Register-ScheduledTask: letzteres antwortet auf diesem
+    # System mit "Zugriff verweigert", auch fuer eine Aufgabe im eigenen
+    # Benutzerkontext. schtasks kommt ohne Administratorrechte aus.
     $skript = Join-Path $PSScriptRoot "release-watch.ps1"
-    $aktion = New-ScheduledTaskAction -Execute "powershell.exe" `
-        -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$skript`""
+    $befehl = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \`"$skript\`""
 
-    # Bei der Anmeldung und danach regelmaessig: der Rechner ist nicht immer an, das
-    # Nachziehen soll aber nicht bis zum naechsten Neustart warten.
-    $beiAnmeldung = New-ScheduledTaskTrigger -AtLogOn
-    $regelmaessig = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(2) `
-        -RepetitionInterval (New-TimeSpan -Minutes $IntervallMinuten)
-
-    $einstellungen = New-ScheduledTaskSettingsSet -StartWhenAvailable `
-        -DontStopOnIdleEnd -ExecutionTimeLimit (New-TimeSpan -Hours 1)
-
-    Register-ScheduledTask -TaskName $aufgabe -Action $aktion `
-        -Trigger @($beiAnmeldung, $regelmaessig) -Settings $einstellungen -Force | Out-Null
+    $anlegen = Extern schtasks.exe @("/create", "/tn", $aufgabe, "/tr", $befehl,
+                                     "/sc", "MINUTE", "/mo", "$IntervallMinuten", "/f")
+    if ($anlegen.Code -ne 0) { Warnung "Die Aufgabe liess sich nicht anlegen: $($anlegen.Ausgabe)"; exit 1 }
 
     Gut "Aufgabe '$aufgabe' eingerichtet, Pruefung alle $IntervallMinuten Minuten"
-    Info "Ansehen in der Aufgabenplanung oder mit: Get-ScheduledTask $aufgabe"
-    Info "Entfernen mit: tools\release-watch.ps1 -Entfernen"
+    Info "Protokoll: $logDatei"
+    Info "Sofort ausfuehren: schtasks /run /tn $aufgabe"
+    Info "Entfernen:         tools\release-watch.ps1 -Entfernen"
     exit 0
 }
 
 if ($Entfernen) {
     Schritt "Windows-Aufgabe entfernen"
-    $vorhanden = Get-ScheduledTask -TaskName $aufgabe -ErrorAction SilentlyContinue
-    if (-not $vorhanden) { Info "Es war keine Aufgabe eingerichtet."; exit 0 }
-    Unregister-ScheduledTask -TaskName $aufgabe -Confirm:$false
+    $abfrage = Extern schtasks.exe @("/query", "/tn", $aufgabe)
+    if ($abfrage.Code -ne 0) { Info "Es war keine Aufgabe eingerichtet."; exit 0 }
+
+    $loeschen = Extern schtasks.exe @("/delete", "/tn", $aufgabe, "/f")
+    if ($loeschen.Code -ne 0) { Warnung "Die Aufgabe liess sich nicht loeschen: $($loeschen.Ausgabe)"; exit 1 }
     Gut "Aufgabe entfernt"
     exit 0
 }
