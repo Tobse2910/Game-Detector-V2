@@ -10,6 +10,7 @@
 #include <QThreadPool>
 #include <QPointer>
 #include <QList>
+#include <QStringList>
 
 class QTcpServer;
 class QTcpSocket;
@@ -20,6 +21,33 @@ class TwitchAuthManager : public QObject {
 
 public:
 	enum UpdateResult { Failed, Success, AuthError };
+
+	// Everything OBS' own Twitch "Stream Information" dock shows that Helix
+	// actually exposes. Missing from the API, and therefore from here: the go live
+	// notification and the audience setting.
+	struct ChannelInfo {
+		bool valid = false;
+		QString title;
+		QString gameId;
+		QString gameName;
+		QString language;               // broadcaster_language, e.g. "de"
+		QStringList tags;               // up to 10, 25 characters each
+		QStringList classificationLabels; // enabled content_classification_labels
+		bool brandedContent = false;
+		QString error;
+	};
+
+	struct Category {
+		QString id;
+		QString name;
+		QString boxArtUrl;
+	};
+
+	struct ClassificationLabel {
+		QString id;
+		QString name;
+		QString description;
+	};
 
 public:
 	static TwitchAuthManager &get()
@@ -40,6 +68,22 @@ public:
 	QFuture<bool> sendChatMessage(const QString &broadcasterId, const QString &senderId, const QString &message);
 
 	QFuture<QString> getChannelCategory();
+
+	// Stream information panel (added by the kicodebyts fork)
+	QFuture<ChannelInfo> getChannelInfo();
+	QFuture<UpdateResult> updateChannelInfo(const ChannelInfo &info);
+	QFuture<QList<Category>> searchCategories(const QString &query);
+	QFuture<Category> getCategoryById(const QString &gameId);
+	QFuture<QList<ClassificationLabel>> getClassificationLabels();
+
+	// A channel update has to state every label, enabled or not, so the panel hands
+	// over the list it got from Twitch once it has it.
+	void rememberClassificationLabelIds(const QStringList &ids);
+
+	// Twitch derives this one from the category. Sending it, even as false, fails
+	// the whole request with "label provided is not editable by the caller", and
+	// the endpoint takes at most six labels anyway.
+	static constexpr const char *NON_EDITABLE_LABEL = "MatureGame";
 
 signals:
 	void authenticationFinished(bool success, const QString &info);
@@ -73,6 +117,7 @@ private:
 
 	QString accessToken;
 	QString userId;
+	QStringList knownClassificationLabelIds;
 	bool isAuthenticating = false;
 
 	QTcpServer *server = nullptr;

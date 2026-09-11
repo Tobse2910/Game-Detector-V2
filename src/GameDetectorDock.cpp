@@ -8,10 +8,14 @@
 #include "SmartContextManager.h"
 #include "IgnoredAppsDialog.h"
 #include "UpdateChecker.h"
+#include "StreamInfoPanel.h"
 
 #include <QComboBox>
+#include <QDockWidget>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QPointer>
+#include <QScrollArea>
 #include <QLabel>
 #include <QGroupBox>
 #include <QFrame>
@@ -32,8 +36,24 @@
 
 GameDetectorDock::GameDetectorDock(QWidget *parent) : QWidget(parent)
 {
-	QVBoxLayout *mainLayout = new QVBoxLayout(this);
 	this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+
+	// Everything sits inside a scroll area: with the stream information panel added
+	// the dock is taller than most docking spots, and without this the lower half
+	// would simply be cut off instead of reachable.
+	QVBoxLayout *outerLayout = new QVBoxLayout(this);
+	outerLayout->setContentsMargins(0, 0, 0, 0);
+
+	QScrollArea *scrollArea = new QScrollArea(this);
+	scrollArea->setWidgetResizable(true);
+	scrollArea->setFrameShape(QFrame::NoFrame);
+	scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	outerLayout->addWidget(scrollArea);
+
+	QWidget *content = new QWidget(scrollArea);
+	scrollArea->setWidget(content);
+
+	QVBoxLayout *mainLayout = new QVBoxLayout(content);
 
 	buildUpdateNotice(mainLayout);
 
@@ -115,6 +135,12 @@ GameDetectorDock::GameDetectorDock(QWidget *parent) : QWidget(parent)
 	mainLayout->addLayout(executionLayout);
 
 	buildSmartContextUi(mainLayout);
+
+	// Replaces OBS' Twitch stream info dock, which cannot be read or written from
+	// here. Sits at the bottom because the fields above are the ones used during a
+	// stream, while these are set once and then left alone.
+	streamInfoPanel = new StreamInfoPanel(content);
+	mainLayout->addWidget(streamInfoPanel);
 
 	connect(executeCommandButton, &QPushButton::clicked, this, &GameDetectorDock::onExecuteCommandClicked);
 	connect(manualGameButton, &QPushButton::clicked, this, [this]() {
@@ -776,6 +802,7 @@ void GameDetectorDock::loadSettingsFromConfig()
 	smartDelayCombo->setCurrentIndex(delayIndex >= 0 ? delayIndex : smartDelayCombo->findData(300));
 	smartDelayCombo->blockSignals(false);
 
+
 	applySmartContextMode();
 	checkWarningsAndStatus();
 }
@@ -813,6 +840,12 @@ void GameDetectorDock::onCategoryUpdateFinished(bool success, const QString &gam
 	if (success) {
 		statusLabel->setText(QString(obs_module_text("Dock.CategoryUpdated")).arg(gameName));
 		PlatformManager::get().fetchCurrentCategories();
+
+		// Delayed, because the panel reads the new state back from Twitch:
+		// asking too early would still return the old value. reload() declines
+		// on its own while there are unsaved edits in the panel.
+		if (streamInfoPanel)
+			QTimer::singleShot(4000, this, [this]() { streamInfoPanel->reload(); });
 	} else {
 		statusLabel->setText(QString(errorString).arg(gameName));
 	}

@@ -107,6 +107,36 @@ made a working change look broken:
   that was just made. A plugin cannot refresh or read that window, `obs-frontend-api`
   exposes nothing for it, so the dock states this instead of pretending otherwise.
 
+## Stream information panel
+
+OBS' own Twitch "Stream Information" dock is a browser dock pointed at
+`dashboard.twitch.tv/u/<name>/stream-manager/edit-stream-info`. That has three
+consequences: its fields cannot be written from a plugin, it never notices a change
+made through the API, and its Done button posts whatever stale value it still shows,
+undoing the change that was just made. `obs-frontend-api` offers nothing for it.
+
+`src/StreamInfoPanel.h/.cpp` replaces it, talking to Helix directly. It covers
+everything that dock offers which Helix actually exposes: title with its 140 character
+limit, category with search and box art, tags, stream language, content classification
+labels and branded content. Missing, because Twitch has no endpoint for them: the go
+live notification and the audience setting.
+
+It reloads itself after every category change, four seconds later so Twitch has the
+new value, and declines to reload while there are unsaved edits, so a half typed title
+is never wiped out.
+
+Two things the API only reveals when you try:
+
+- `content_classification_labels` takes **at most six** entries, and
+  `GET /helix/content_classification_labels` returns **seven**. `MatureGame` is derived
+  from the category and answers 400 "label provided is not editable by the caller",
+  which fails the whole request. It is shown but greyed out, and never sent.
+- An update has to list every editable label with its state. Leaving one out keeps its
+  previous value, so unchecking would silently do nothing.
+
+The dock is wrapped in a `QScrollArea`: with this panel added it is taller than most
+docking spots, and without it the lower half would be cut off rather than reachable.
+
 ## Update check and one click update
 
 `src/UpdateChecker.h/.cpp` asks the GitHub API for the newest release of this fork and
@@ -163,6 +193,7 @@ release is what the update check looks at.
 |---|---|
 | `src/SmartContextManager.h/.cpp` | Foreground polling, rule engine, stability timer, anti-flapping, category lock |
 | `src/SmartContextRulesDialog.h/.cpp` | Editor for the rule list |
+| `src/StreamInfoPanel.h/.cpp` | Title, category, tags, language, classification labels and branded content straight through Helix; replaces OBS' Twitch stream info dock |
 | `src/UpdateChecker.h/.cpp` | Asks the GitHub API for the newest release, downloads it and hands it to the elevated helper |
 | `data/update.ps1` | Elevated helper: waits for OBS to exit, replaces the plugin, rolls back on failure, restarts OBS |
 | `.github/workflows/release.yml` | Builds on a `v*` tag and attaches the ready to use ZIP to the release |
@@ -177,6 +208,7 @@ release is what the update check looks at.
 | `src/GameDetector.h/.cpp` | Added `getGameNameForExe()`, a read-only case-insensitive lookup in the configured game list. Existing detection untouched |
 | `src/GameDetectorDock.h/.cpp` | New "Smart Context" group (mode toggle, category lock, delay, live status: active application / detected context / active since / switching in / current Twitch category). The pre-existing auto-update is suppressed while Smart Context Mode or the lock is on, and a merely running game no longer claims the category in that mode |
 | `src/GameDetectorSettingsDialog.h/.cpp` | Button opening the rule editor, update check switch, running version |
+| `src/TwitchAuthManager.h/.cpp` | Reads and writes the full channel information, searches categories, fetches classification labels |
 | `src/PlatformManager.h/.cpp` | Logs the result of a category change, not just failures, and remembers the title that went with it |
 | `src/NetworkCommon.h` | `DownloadToFile()` for binary downloads, with an abort flag so closing OBS does not wait on a transfer |
 | `src/PluginMain.cpp` | Stop the Smart Context poller and the update check on module unload |

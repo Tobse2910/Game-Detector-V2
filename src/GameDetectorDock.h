@@ -12,6 +12,7 @@
 #include <obs-module.h>
 
 class GameDetectorSettingsDialog;
+class StreamInfoPanel;
 
 class GameDetectorDock : public QWidget {
 	Q_OBJECT
@@ -56,6 +57,7 @@ private:
 	QPushButton *applyNowButton = nullptr;
 	QPushButton *resetTimerButton = nullptr;
 	QPushButton *ignoredAppsButton = nullptr;
+	StreamInfoPanel *streamInfoPanel = nullptr;
 
 	QString configPath;
 	QString detectedGameName;
@@ -73,6 +75,7 @@ private:
 
 	void buildSmartContextUi(QVBoxLayout *mainLayout);
 	void buildUpdateNotice(QVBoxLayout *mainLayout);
+
 	void applySmartContextMode();
 	void refreshManualCategoryCombo();
 

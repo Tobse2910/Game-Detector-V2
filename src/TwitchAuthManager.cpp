@@ -15,6 +15,7 @@
 #include <QJsonArray>
 #include <QTimer>
 #include <QCoreApplication>
+#include <QLocale>
 
 static const QString SVG_SUCCESS =
 	"<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='#4caf50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M22 11.08V12a10 10 0 1 1-5.93-9.14'></path><polyline points='22 4 12 14.01 9 11.01'></polyline></svg>";
@@ -525,6 +526,213 @@ QFuture<QString> TwitchAuthManager::getChannelTitle()
 
 		return arr.first().toObject().value("title").toString();
 	});
+}
+
+// --- Stream information panel (added by the kicodebyts fork) ---------------
+//
+// These four calls back the panel that replaces OBS' own Twitch stream info dock.
+// GET /helix/channels returns everything that dock shows except the go live
+// notification and the audience setting, neither of which Helix exposes at all.
+
+QFuture<TwitchAuthManager::ChannelInfo> TwitchAuthManager::getChannelInfo()
+{
+	if (userId.isEmpty()) {
+		return QtConcurrent::run(&threadPool, []() {
+			ChannelInfo info;
+			info.error = "not authenticated";
+			return info;
+		});
+	}
+
+	const QString url = "https://api.twitch.tv/helix/channels?broadcaster_id=" + userId;
+
+	return RunTaskSafe(&threadPool, "TwitchAuth/getChannelInfo", [this, url]() mutable -> ChannelInfo {
+		ChannelInfo info;
+
+		auto [http_code, json] = performGETSync(url, accessToken);
+		if (http_code != 200) {
+			info.error = QString("HTTP %1").arg(http_code);
+			return info;
+		}
+
+		QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+		const QJsonArray data = doc["data"].toArray();
+		if (data.isEmpty()) {
+			info.error = "empty answer";
+			return info;
+		}
+
+		const QJsonObject channel = data.first().toObject();
+
+		info.title = channel.value("title").toString();
+		info.gameId = channel.value("game_id").toString();
+		info.gameName = channel.value("game_name").toString();
+		info.language = channel.value("broadcaster_language").toString();
+		info.brandedContent = channel.value("is_branded_content").toBool();
+
+		for (const QJsonValue &tag : channel.value("tags").toArray())
+			info.tags.append(tag.toString());
+
+		// On the way out these are plain strings; on the way in they are objects.
+		for (const QJsonValue &label : channel.value("content_classification_labels").toArray())
+			info.classificationLabels.append(label.toString());
+
+		info.valid = true;
+		return info;
+	});
+}
+
+QFuture<TwitchAuthManager::UpdateResult> TwitchAuthManager::updateChannelInfo(const ChannelInfo &info)
+{
+	if (userId.isEmpty())
+		return QtConcurrent::run(&threadPool, []() { return AuthError; });
+
+	const QString url = "https://api.twitch.tv/helix/channels?broadcaster_id=" + userId;
+
+	QJsonObject body;
+	body["title"] = info.title;
+	body["broadcaster_language"] = info.language;
+	body["is_branded_content"] = info.brandedContent;
+
+	if (!info.gameId.isEmpty())
+		body["game_id"] = info.gameId;
+
+	QJsonArray tags;
+	for (const QString &tag : info.tags)
+		tags.append(tag);
+	body["tags"] = tags;
+
+	// Every label has to be listed with its state, otherwise unlisted ones keep
+	// whatever they had and unchecking would never take effect.
+	//
+	// Except MatureGame: Twitch derives it from the category and answers 400 "label
+	// provided is not editable by the caller" for it, which rejects the whole
+	// request. The endpoint also accepts at most six labels, and there are exactly
+	// six editable ones, so it has to be left out rather than sent as false.
+	QJsonArray labels;
+	for (const QString &id : knownClassificationLabelIds) {
+		if (id == NON_EDITABLE_LABEL)
+			continue;
+
+		QJsonObject entry;
+		entry["id"] = id;
+		entry["is_enabled"] = info.classificationLabels.contains(id);
+		labels.append(entry);
+	}
+	if (!labels.isEmpty())
+		body["content_classification_labels"] = labels;
+
+	return RunTaskSafe(&threadPool, "TwitchAuth/updateChannelInfo", [this, url, body]() mutable -> UpdateResult {
+		auto [http_code, response] = performPATCHSync(url, body, accessToken);
+
+		if (http_code == 204 || (http_code >= 200 && http_code < 300))
+			return Success;
+		if (http_code == 401)
+			return AuthError;
+
+		blog(LOG_WARNING, "[GameDetector/TwitchAuth] Updating the channel failed (HTTP %ld): %s", http_code,
+		     response.toStdString().c_str());
+		return Failed;
+	});
+}
+
+QFuture<QList<TwitchAuthManager::Category>> TwitchAuthManager::searchCategories(const QString &query)
+{
+	const QString trimmed = query.trimmed();
+	if (trimmed.isEmpty())
+		return QtConcurrent::run(&threadPool, []() { return QList<Category>(); });
+
+	const QString url =
+		"https://api.twitch.tv/helix/search/categories?first=10&query=" + QUrl::toPercentEncoding(trimmed);
+
+	return RunTaskSafe(&threadPool, "TwitchAuth/searchCategories", [this, url]() mutable -> QList<Category> {
+		QList<Category> results;
+
+		auto [http_code, json] = performGETSync(url, accessToken);
+		if (http_code != 200)
+			return results;
+
+		QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+		for (const QJsonValue &value : doc["data"].toArray()) {
+			const QJsonObject game = value.toObject();
+			Category category;
+			category.id = game.value("id").toString();
+			category.name = game.value("name").toString();
+			category.boxArtUrl = game.value("box_art_url").toString();
+			if (!category.id.isEmpty())
+				results.append(category);
+		}
+
+		return results;
+	});
+}
+
+QFuture<TwitchAuthManager::Category> TwitchAuthManager::getCategoryById(const QString &gameId)
+{
+	// GET /helix/channels gives game_id and game_name but no artwork, so the box
+	// art for the category currently set has to be asked for separately.
+	if (gameId.isEmpty())
+		return QtConcurrent::run(&threadPool, []() { return Category(); });
+
+	const QString url = "https://api.twitch.tv/helix/games?id=" + QUrl::toPercentEncoding(gameId);
+
+	return RunTaskSafe(&threadPool, "TwitchAuth/getCategoryById", [this, url]() mutable -> Category {
+		Category category;
+
+		auto [http_code, json] = performGETSync(url, accessToken);
+		if (http_code != 200)
+			return category;
+
+		QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+		const QJsonArray data = doc["data"].toArray();
+		if (data.isEmpty())
+			return category;
+
+		const QJsonObject game = data.first().toObject();
+		category.id = game.value("id").toString();
+		category.name = game.value("name").toString();
+		category.boxArtUrl = game.value("box_art_url").toString();
+		return category;
+	});
+}
+
+QFuture<QList<TwitchAuthManager::ClassificationLabel>> TwitchAuthManager::getClassificationLabels()
+{
+	// Asking in the user's language keeps the wording identical to what Twitch
+	// shows in its own dock.
+	const QString locale = QLocale::system().name().replace('_', '-');
+	const QString url = "https://api.twitch.tv/helix/content_classification_labels?locale=" + locale;
+
+	return RunTaskSafe(&threadPool, "TwitchAuth/getClassificationLabels",
+			   [this, url]() mutable -> QList<ClassificationLabel> {
+				   QList<ClassificationLabel> results;
+
+				   auto [http_code, json] = performGETSync(url, accessToken);
+				   if (http_code != 200) {
+					   blog(LOG_WARNING,
+						"[GameDetector/TwitchAuth] Cannot read the classification labels (HTTP %ld).",
+						http_code);
+					   return results;
+				   }
+
+				   QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+				   for (const QJsonValue &value : doc["data"].toArray()) {
+					   const QJsonObject label = value.toObject();
+					   ClassificationLabel entry;
+					   entry.id = label.value("id").toString();
+					   entry.name = label.value("name").toString();
+					   entry.description = label.value("description").toString();
+					   if (!entry.id.isEmpty())
+						   results.append(entry);
+				   }
+
+				   return results;
+			   });
+}
+
+void TwitchAuthManager::rememberClassificationLabelIds(const QStringList &ids)
+{
+	knownClassificationLabelIds = ids;
 }
 
 std::pair<long, QString> TwitchAuthManager::performPATCHSync(const QString &url, const QJsonObject &body,
