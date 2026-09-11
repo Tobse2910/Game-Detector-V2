@@ -300,18 +300,26 @@ Fork von [FabioZumbi12/game-detector](https://github.com/FabioZumbi12/game-detec
 
     # Genau der Aufruf, den UpdateChecker macht. Ohne ZIP daran bringt das Release
     # niemandem etwas: der Ein-Klick-Knopf im Dock haette nichts zu laden.
-    $abfrage = Extern gh @("api", "repos/$ghRepo/releases/latest", "--jq",
-                           '{tag: .tag_name, prerelease: .prerelease, zips: [.assets[].name | select(endswith(".zip"))]}')
+    # Ganze Antwort holen und hier auswerten. Ein jq-Ausdruck, der ein Objekt baut,
+    # laesst gh mit "expected an object but got: string" abbrechen.
+    $abfrage = Extern gh @("api", "repos/$ghRepo/releases/latest")
     if ($abfrage.Code -ne 0) { Abbruch "Die Release-Abfrage ist fehlgeschlagen: $($abfrage.Ausgabe)" }
 
-    $daten = $abfrage.Ausgabe | ConvertFrom-Json
-    Info "neuestes Release: $($daten.tag)"
-    Info "Vorabversion:     $($daten.prerelease)"
-    Info "ZIP daran:        $($daten.zips -join ', ')"
+    try {
+        $daten = $abfrage.Ausgabe | ConvertFrom-Json
+    } catch {
+        Abbruch "Die Antwort von GitHub war kein JSON: $($abfrage.Ausgabe)"
+    }
 
-    if ($daten.tag -ne $tag) { Abbruch "GitHub liefert '$($daten.tag)' als neuestes Release, nicht $tag." }
+    $zips = @($daten.assets | Where-Object { $_.name -like "*.zip" } | ForEach-Object { $_.name })
+
+    Info "neuestes Release: $($daten.tag_name)"
+    Info "Vorabversion:     $($daten.prerelease)"
+    Info "ZIP daran:        $($zips -join ', ')"
+
+    if ($daten.tag_name -ne $tag) { Abbruch "GitHub liefert '$($daten.tag_name)' als neuestes Release, nicht $tag." }
     if ($daten.prerelease) { Abbruch "Das Release ist als Vorabversion markiert; der Update-Check ueberspringt es." }
-    if (-not $daten.zips) { Abbruch "Am Release haengt kein ZIP; der Update-Knopf haette nichts zu laden." }
+    if (-not $zips) { Abbruch "Am Release haengt kein ZIP; der Update-Knopf haette nichts zu laden." }
 
     Write-Host ""
     Gut "Release $Version ist draussen und wird vom Update-Check gefunden."
