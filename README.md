@@ -1,80 +1,85 @@
-![Screenshot_29](https://github.com/user-attachments/assets/bc139a51-43d5-4266-8214-ab06be8517d4)
-
- [English](README.md) | [Português (BR)](README.pt-BR.md) 
-
-# Game Detector OBS Plugin
-[![GitHub Release](https://img.shields.io/github/v/release/FabioZumbi12/game-detector)](https://github.com/FabioZumbi12/game-detector/releases/latest)  
-
-Plugin to detect installed games and integrate with Twitch  
-OBS Plugins Page: https://obsproject.com/forum/resources/game-detector.2260/
-
-**🎯 Minimum OBS Version: 28.0+** | **Latest Built: OBS 31.1.1**
-
----
-
-## 📘 About Game Detector OBS Plugin
-
-GameDetector is a plugin for OBS Studio that automatically identifies games installed on your PC (Steam and Epic Games), allowing:
-
-- Automatic game selection  
-- Twitch integration
-- Editing and correction of detected game names and executables  
-- Automatic metadata creation  
-- User-friendly interface inside OBS  
-
-The focus is speed, accurate detection, and zero performance impact.
-
-## 📥 Installation and Usage
-
-Checkout the [WIKI Page](../../wiki)
-
-## 🤝 Credits
-
-Developed by **Fábio F. Magalhães (FabioZumbi12)**.  
-Contributions and PRs are welcome!
-
----
-
-## 🧠 Smart Context Mode (fork)
-
 ![Game Detector - Smart Context Mode](img/smart-context-mode.png)
 
-This branch is a modified version that adds **Smart Context Mode**: instead of only
-detecting *that* a game is running, it evaluates the Windows **foreground window** to
-detect which application you are actually using, and switches the Twitch category and
-stream title only after that application has been in front for a configurable time
-(default 5 minutes), with anti-flapping and a category lock.
+# Game Detector V2 (Smart Context Mode)
 
-**What it adds:**
+[![Release](https://img.shields.io/github/v/release/Tobse2910/Game-Detector-V2)](https://github.com/Tobse2910/Game-Detector-V2/releases/latest)
+[![Lizenz](https://img.shields.io/badge/Lizenz-GPL--2.0-blue)](LICENSE)
+[![OBS](https://img.shields.io/badge/OBS-28%2B-green)](https://obsproject.com/)
 
-- Foreground window detection - not "is a game running" but "what am I actually using"
-- Category **and** stream title set together through the Twitch API
-- Editable rule list: process (with `*` / `?` wildcards), optional window title match,
-  category, title template, per-rule delay, ignore flag, priority
-- Anti-flapping: 60 s cooldown after each switch, 60 s alt-tab tolerance, ignored
-  applications stay completely neutral
-- Dedicated editor for ignored applications, with one-click "add the app in front"
-- Optional chat announcement after each switch
-- Manual override: apply a category, switch now, reset the timer
-- Category lock that blocks every automatic change
-- German translation
+Ein OBS-Plugin, das erkennt, **welche Anwendung du gerade tatsächlich benutzt**, und
+danach automatisch deine Twitch-Kategorie und deinen Streamtitel setzt.
 
-📄 **Installation and setup: [INSTALL.md](INSTALL.md)** (German)
-📄 **Full list of changes: [FORK-CHANGES.md](FORK-CHANGES.md)**
+Nicht "läuft irgendwo ein Spiel?", sondern "welches Fenster ist im Vordergrund?", und
+der Wechsel passiert erst, wenn das eine Weile stabil so bleibt.
 
-Windows only - the foreground detection uses Windows APIs. Requires OBS 28+
-(tested on 32.2.1).
+## ⬇️ Herunterladen
+
+**[Aktuelle Version herunterladen](https://github.com/Tobse2910/Game-Detector-V2/releases/latest)**
+
+1. ZIP herunterladen und entpacken
+2. OBS Studio komplett schließen
+3. **`Installieren.bat`** doppelklicken und die Windows-Abfrage mit Ja bestätigen
+
+Nach dem Entpacken liegen genau vier Dinge da: die beiden Startdateien, die Anleitung
+und die Lizenz. Anzuklicken ist nur `Installieren.bat`.
+
+Nur Windows, OBS 28 oder neuer (getestet auf 32.2.1). Die Vordergrunderkennung nutzt
+Windows-Schnittstellen.
+
+## ✨ Was es kann
+
+**Smart Context Mode.** Wertet das Vordergrundfenster aus und wechselt Kategorie und
+Titel erst, wenn eine Anwendung die eingestellte Zeit lang vorne war (Standard 5
+Minuten). Mit Anti-Flapping: 60 Sekunden Ruhe nach jedem Wechsel, 60 Sekunden
+Alt-Tab-Toleranz, und ignorierte Programme sind vollständig neutral.
+
+**Eigene Regeln.** Programm (mit `*` und `?` als Platzhalter), optional ein Fenstertitel,
+Kategorie, Titelvorlage, eigene Verzögerung, Ignorieren-Schalter und Priorität. Dazu ein
+eigener Editor für ignorierte Programme mit "aktuelles Programm hinzufügen".
+
+**Streaminformation im Dock.** Titel, Kategorie mit Suche und Titelbild, Tags,
+Stream-Sprache, Inhaltskennzeichnung und gesponserte Inhalte, alles direkt über die
+Twitch-API. Das OBS-Fenster "Streaminformation" brauchst du dafür nicht mehr; es ist
+eine Twitch-Webseite, die sich nach einem Wechsel nicht aktualisiert und deren
+Fertig-Knopf den alten Wert zurückschreibt.
+
+**Update mit einem Klick.** Ist eine neuere Version da, steht oben im Dock ein Hinweis.
+Ein Klick lädt sie, fragt einmal nach Administratorrechten, beendet OBS, tauscht das
+Plugin aus und startet OBS wieder. Geht beim Austauschen etwas schief, wird die
+vorherige Version wiederhergestellt. Während Stream oder Aufnahme wird das Update
+verweigert.
+
+**Sichtbares Ergebnis.** Die Zeilen "Aktuelle Twitch Kategorie" und "Letzter Wechsel"
+lesen live von Twitch, und jedes Ergebnis steht im OBS-Log.
+
+Manuelle Übersteuerung ist überall möglich: Kategorie setzen, jetzt wechseln, Timer
+zurücksetzen, Kategorie sperren.
+
+## 📄 Mehr
+
+- **[Installation und Einrichtung](INSTALL.md)** Schritt für Schritt
+- **[Alle Änderungen gegenüber dem Original](FORK-CHANGES.md)**
 
 ---
 
-## 👤 Credits
+## 👤 Credits und Lizenz
 
-**Original plugin** by **Fábio F. Magalhães (FabioZumbi12)**
+**Ursprüngliches Plugin** von **Fábio F. Magalhães (FabioZumbi12)**
 <https://github.com/FabioZumbi12/game-detector>
+Plugin-Seite: <https://obsproject.com/forum/resources/game-detector.2260/>
 
-**Smart Context Mode** by **Tobias Schlothane** - [it-kicodebyts.com](https://it-kicodebyts.com)
-Designed, specified and tested by Tobias Schlothane, implemented together with
+Darin enthalten und unverändert übernommen: Twitch- und Trovo-Anmeldung, die
+Plattform-Aufrufe, die Spielesuche in Steam-, Epic-, GOG- und Ubisoft-Bibliotheken, die
+Spieleliste und das Dock.
+
+**Smart Context Mode und alles Weitere** von **Tobias Schlothane**
+[it-kicodebyts.com](https://it-kicodebyts.com)
+Konzipiert, spezifiziert und getestet von Tobias Schlothane, umgesetzt gemeinsam mit
 [Claude Code](https://claude.com/claude-code) (Anthropic).
 
-Licensed under the **GNU General Public License v2.0**, like the original.
-If you pass this plugin on, you have to pass the source along with it.
+Lizenziert unter der **GNU General Public License v2.0**, wie das Original. Die GPL gibt
+dir das Recht, den kompletten Quelltext zu bekommen, ihn anzusehen, zu verändern und
+weiterzugeben. Wenn du dieses Plugin weitergibst, musst du den Quelltext mitgeben.
+
+Englische Fassung des Originals: [README.md des Upstream](https://github.com/FabioZumbi12/game-detector#readme)
+Portugiesisch: [README.pt-BR.md](README.pt-BR.md)

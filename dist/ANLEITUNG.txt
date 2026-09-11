@@ -90,16 +90,70 @@
 
 
 -------------------------------------------------------------------------------
+  STREAMINFORMATION  (ersetzt das OBS-Fenster)
+-------------------------------------------------------------------------------
+
+  Im Dock nach unten scrollen, dort steht "Streaminformation".
+
+  Das setzt du dort direkt, ohne Browser und ohne das OBS-Fenster:
+
+       Titel                 mit Zeichenzaehler (140)
+       Kategorie             mit Suchfeld und Titelbild
+       Tags                  bis zu 10, je 25 Zeichen, nur Buchstaben
+                             und Zahlen
+       Stream-Sprache
+       Inhaltskennzeichnung
+       Gesponserte Inhalte
+
+  Unten: "Uebernehmen" schickt es an Twitch, "Verwerfen" holt den
+  gespeicherten Stand zurueck, "Neu laden" liest frisch von Twitch.
+
+  Es aktualisiert sich selbst: nach jedem Kategoriewechsel liest es den
+  Stand neu. Solange du aber selbst etwas geaendert und noch nicht
+  uebernommen hast, bleibt es stehen. Dann erscheint oben ein Hinweis in
+  Orange, und dein halb getippter Titel geht nicht verloren.
+
+  NICHT DABEI: Live-Benachrichtigung und die Zuschauer-Einstellung.
+  Fuer diese zwei Felder bietet Twitch keine Schnittstelle an. Der Knopf
+  "Live-Benachrichtigung auf Twitch bearbeiten" ganz unten oeffnet dir
+  die passende Twitch-Seite.
+
+  "Spiel fuer Erwachsene" ist ausgegraut. Diese Kennzeichnung setzt
+  Twitch selbst anhand der Kategorie, sie ist nicht aenderbar.
+
+
+-------------------------------------------------------------------------------
+  UPDATES
+-------------------------------------------------------------------------------
+
+  Das Plugin schaut hoechstens einmal taeglich nach einer neueren
+  Version. Gibt es eine, steht oben im Dock:
+
+       Version X.Y.Z ist verfuegbar   [Jetzt aktualisieren] [Download oeffnen]
+
+  "Jetzt aktualisieren" macht alles allein: herunterladen, Windows-
+  Abfrage bestaetigen, OBS wird beendet, das Plugin getauscht, OBS
+  startet wieder. Deine Einstellungen und die Twitch-Verbindung bleiben
+  erhalten. Geht beim Austauschen etwas schief, wird die vorherige
+  Version wiederhergestellt.
+
+  Waehrend du live bist oder aufnimmst, wird das Update verweigert, denn
+  es muesste OBS beenden.
+
+  Abschalten kannst du die Suche in den Einstellungen bei
+  "Nach Updates suchen". Dort steht auch, welche Version gerade laeuft.
+
+
+-------------------------------------------------------------------------------
   GUT ZU WISSEN
 -------------------------------------------------------------------------------
 
   * Nur Windows. OBS 28 oder neuer.
 
-  * Das Panel "Streaminformation" in OBS aktualisiert sich NICHT.
-    Das ist OBS' eigenes Eingabeformular, da kommt kein Plugin ran.
-    Es zeigt alte Werte, und "Fertig" wuerde diese alten Werte an Twitch
-    zurueckschicken. Schau stattdessen ins Game-Detector-Dock, dort
-    stehen Kategorie und Titel live.
+  * Das OBS-Fenster "Streaminformation" brauchst du nicht mehr, siehe
+    den Abschnitt weiter oben. Es ist eine Twitch-Webseite, die sich nach
+    einem Wechsel nicht aktualisiert, und sein "Fertig"-Knopf schickt den
+    alten Wert zurueck an Twitch. Du kannst es zumachen.
 
   * Kurzes Alt-Tab unter 60 Sekunden wirft den Timer nicht weg.
     Nach jedem Wechsel sind mindestens 60 Sekunden Ruhe.
@@ -122,7 +176,7 @@
     Konzipiert, spezifiziert und getestet von Tobias Schlothane,
     umgesetzt gemeinsam mit Claude Code (Anthropic).
 
-  Lizenz: GNU General Public License v2.0  (siehe LICENSE.txt)
+  Lizenz: GNU General Public License v2.0  (siehe die Datei LICENSE)
 
   QUELLCODE:
     https://github.com/Tobse2910/Game-Detector-V2

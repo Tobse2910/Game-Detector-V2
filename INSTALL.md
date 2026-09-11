@@ -176,13 +176,55 @@ Entscheidungen.
 
 ---
 
+## Streaminformation im Dock
+
+Im Dock nach unten scrollen, dort steht **Streaminformation**. Das ersetzt das
+OBS-Fenster mit demselben Namen und schreibt direkt über die Twitch-API:
+
+| Feld | Hinweis |
+|---|---|
+| Titel | mit Zeichenzähler, Twitch erlaubt 140 |
+| Kategorie | Suchfeld mit Vorschlägen und Titelbild |
+| Tags | bis zu 10, je 25 Zeichen, nur Buchstaben und Zahlen |
+| Stream-Sprache | |
+| Inhaltskennzeichnung | „Spiel für Erwachsene" ist ausgegraut, das setzt Twitch selbst aus der Kategorie |
+| Gesponserte Inhalte | |
+
+**Übernehmen** schickt es an Twitch, **Verwerfen** holt den gespeicherten Stand zurück,
+**Neu laden** liest frisch von Twitch.
+
+Nach jedem Kategoriewechsel liest der Bereich den Stand automatisch neu. Solange du
+selbst etwas geändert und noch nicht übernommen hast, bleibt er stehen und sagt das
+auch, damit ein halb getippter Titel nicht verschwindet.
+
+**Nicht dabei:** Live-Benachrichtigung und die Zuschauer-Einstellung. Für diese zwei
+Felder bietet Twitch keine Schnittstelle an, das ist in der offiziellen API-Referenz
+nachgeprüft. Der Knopf ganz unten öffnet dafür die passende Twitch-Seite.
+
+---
+
+## Updates
+
+Das Plugin fragt höchstens einmal täglich bei GitHub nach einer neueren Version. Gibt es
+eine, erscheint oben im Dock ein Hinweis mit **Jetzt aktualisieren**. Ein Klick lädt das
+Update, fragt einmal nach Administratorrechten, beendet OBS, tauscht das Plugin aus und
+startet OBS wieder. Einstellungen und Twitch-Verbindung bleiben erhalten, und geht beim
+Austauschen etwas schief, wird die vorherige Version wiederhergestellt.
+
+Während Stream oder Aufnahme wird das Update verweigert, weil es OBS beenden müsste.
+
+Abschaltbar in den Einstellungen unter **Nach Updates suchen**. Dort steht auch die
+laufende Version.
+
+---
+
 ## Bekannte Eigenheiten
 
-**OBS' „Streaminformation"-Dock aktualisiert sich nicht.** Das ist OBS' eigenes
-Eingabeformular und für Plugins nicht erreichbar - die OBS-API bietet keine Funktion
-dafür. Es zeigt weiter alte Werte an, und **„Fertig"** würde diese alten Werte an Twitch
-zurückschicken. Nutze stattdessen die Anzeige im Game-Detector-Dock, dort stehen
-Kategorie und Titel live.
+**OBS' eigenes „Streaminformation"-Dock aktualisiert sich nicht.** Das ist eine
+Twitch-Webseite in einem Browser-Dock, für Plugins nicht erreichbar. Es zeigt weiter
+alte Werte, und **„Fertig"** schickt diese alten Werte an Twitch zurück und macht damit
+den Wechsel zunichte, den das Plugin gerade gesetzt hat. Du brauchst es nicht mehr, der
+Bereich oben ersetzt es, und du kannst es zumachen.
 
 **Nur Windows.** Die Vordergrunderkennung nutzt Windows-Funktionen. Unter Linux und
 macOS läuft das restliche Plugin, aber Smart Context erkennt nichts.
