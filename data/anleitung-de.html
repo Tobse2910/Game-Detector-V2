@@ -1,0 +1,253 @@
+<html>
+<head>
+<style type="text/css">
+  body { font-family: "Segoe UI", sans-serif; font-size: 10pt; color: #dcdcdc; }
+  h1 { font-size: 16pt; color: #ffffff; margin-bottom: 2px; }
+  h2 { font-size: 12pt; color: #e07a35; margin-top: 22px; margin-bottom: 4px; }
+  h3 { font-size: 10.5pt; color: #ffffff; margin-top: 14px; margin-bottom: 2px; }
+  p  { margin-top: 4px; margin-bottom: 8px; line-height: 135%; }
+  li { margin-bottom: 5px; line-height: 135%; }
+  code { font-family: Consolas, monospace; color: #9cdcfe; }
+  .lead { color: #b0b0b0; }
+  .kasten { background-color: #2a2119; padding: 8px; }
+  .warn { background-color: #2e1f1f; padding: 8px; }
+  table { border-collapse: collapse; }
+  th { background-color: #33373d; color: #ffffff; padding: 5px; text-align: left; }
+  td { padding: 5px; border-bottom: 1px solid #3a3f45; vertical-align: top; }
+</style>
+</head>
+<body>
+
+<h1>Game Detector V2</h1>
+<p class="lead">Smart Context Mode. Das Plugin setzt deine Twitch-Kategorie und deinen
+Streamtitel, je nachdem womit du gerade arbeitest.</p>
+
+<h2>Was es macht</h2>
+
+<p>Das Plugin schaut jede Sekunde nach, welches Fenster bei dir vorne ist. Nicht ob
+irgendwo ein Spiel im Hintergrund läuft, sondern welches Programm du gerade benutzt.
+Bleibt dasselbe Programm eine Weile vorne, setzt das Plugin die passende Kategorie und
+den Titel auf Twitch.</p>
+
+<p>Die Wartezeit ist Absicht. Wer während einer Runde kurz in den Browser wechselt, will
+nicht, dass die Kategorie mitspringt.</p>
+
+<h2>Einmal einrichten</h2>
+
+<h3>1. Twitch verbinden</h3>
+<p>In diesem Fenster unter <b>Verbindungen</b> auf <b>Twitch: Verbinden</b>. Der Browser
+geht auf, du bestätigst den Zugriff, fertig. Lass <b>Gemeinsame Berechtigungen</b>
+angehakt, sonst fehlt dem Plugin das Recht, Kategorie und Titel zu ändern.</p>
+
+<h3>2. Plattform-Aktion prüfen</h3>
+<p>Rechts muss <b>Kategorie über API</b> stehen. Die andere Einstellung schickt nur einen
+Chat-Befehl an einen Bot und verwirft deinen Titel.</p>
+
+<h3>3. Smart Context Mode anschalten</h3>
+<p>Im Dock, nicht hier. Den Haken bei <b>Smart Context Mode</b> setzen und eine
+<b>Verzögerung</b> wählen. Voreingestellt sind 5 Minuten.</p>
+
+<h2>Das Dock lesen</h2>
+
+<table width="100%">
+<tr><th width="34%">Zeile</th><th>Bedeutung</th></tr>
+<tr><td>Aktive Anwendung</td><td>Das Programm, das gerade vorne ist. Bei FiveM steht der
+Server in Klammern dahinter, auf dem leeren Bildschirm steht
+<code>(Schreibtisch)</code>.</td></tr>
+<tr><td>Erkannter Kontext</td><td>Die Kategorie, auf die das hinausläuft. Steht dort
+<i>Ignoriert</i>, ändert das Plugin nichts. Steht <code>(feste Kategorie)</code> dabei,
+kommt sie aus der Ausweichstufe und nicht aus einer Regel.</td></tr>
+<tr><td>Aktiv seit</td><td>Wie lange dieses Programm schon vorne ist.</td></tr>
+<tr><td>Wechsel in</td><td>Wie lange es noch dauert. Ein Strich heißt: nichts steht
+an.</td></tr>
+<tr><td>Aktuelle Twitch Kategorie</td><td>Was wirklich auf deinem Kanal steht, direkt von
+Twitch gelesen.</td></tr>
+<tr><td>Letzter Wechsel</td><td>Wann das Plugin zuletzt etwas gesetzt hat, und ob es
+geklappt hat.</td></tr>
+</table>
+
+<h2>Regeln</h2>
+
+<p>Eine Regel sagt: dieses Programm bedeutet diese Kategorie. Zu finden unter
+<b>Smart-Context-Regeln verwalten</b>. Eine Regel hat sechs Felder.</p>
+
+<ul>
+<li><b>Programm</b>: der Dateiname, zum Beispiel <code>FiveM_*.exe</code>. Ein
+<code>*</code> steht für beliebig viele Zeichen, ein <code>?</code> für eines. Das hilft
+bei Spielen, deren Dateiname die Version enthält.</li>
+<li><b>Fenstertitel</b>: leer lassen, außer du willst ein Programm nach Titel
+unterscheiden.</li>
+<li><b>Kategorie</b>: der Name, wie er bei Twitch heißt. Tippfehler lehnt Twitch ab.</li>
+<li><b>Titelvorlage</b>: leer heißt, der Titel bleibt unberührt. Sonst siehe Platzhalter
+weiter unten.</li>
+<li><b>Verzögerung</b>: eigene Zeit für diese Regel, oder Standard.</li>
+<li><b>Priorität</b>: passen mehrere Regeln, gewinnt die höchste. Bei Gleichstand
+schlägt ein genauer Dateiname einen mit Platzhaltern.</li>
+</ul>
+
+<p>Spiele aus deinen Steam-, Epic-, GOG- und Ubisoft-Bibliotheken erkennt das Plugin auch
+ohne Regel. Eine Regel mit genauem Dateinamen gewinnt trotzdem, weil du sie ausdrücklich
+angelegt hast.</p>
+
+<h2>Ignorierte Programme</h2>
+
+<p>Programme auf dieser Liste ändern die Kategorie nie. Discord, Spotify, OBS selbst, der
+Stream Deck, die Spiele-Launcher. Sie halten auch den Timer nicht auf: wer mitten in einer
+Runde zwei Minuten in Discord redet und zurückkommt, verliert die angesammelte Zeit
+nicht.</p>
+
+<p>Zu finden im Dock unter <b>Programme ignorieren</b>. Eine Zeile anklicken,
+<b>Entfernen</b>, dann mit <b>OK</b> schließen. Ohne OK wird nichts gespeichert.</p>
+
+<div class="kasten">
+<p>Der leere Schreibtisch gehört zwar zu <code>explorer.exe</code>, zählt aber nicht als
+Programm. Er läuft an den Regeln vorbei, damit die feste Kategorie greifen kann. Ein
+Explorer-Fenster mit Ordnern bleibt ein Programm wie jedes andere.</p>
+</div>
+
+<h2>Feste Kategorie, wenn nichts erkannt wird</h2>
+
+<p>Im Dock, unter der Verzögerung. Haken setzen, Kategorie eintragen, zum Beispiel
+<code>Just Chatting</code> oder <code>IRL</code>. Ab dann setzt das Plugin diese
+Kategorie, sobald du bei etwas bist, für das keine Regel existiert.</p>
+
+<p>Das ist die letzte Stufe. Eine Regel gewinnt immer. Sitzt du in Visual Studio Code und
+hast dafür eine Regel, kommt deren Kategorie und nicht die feste. Wenn du das nicht
+willst, ändere oder lösche diese Regel.</p>
+
+<p>Der Titel fällt dabei auf deinen eigenen zurück. Wer FiveM verlässt, hat den
+Servernamen nicht weiter im Titel stehen.</p>
+
+<h2>FiveM: der Server im Titel</h2>
+
+<p>Bei FiveM ist die Kategorie immer Grand Theft Auto V, egal auf welchem Server du
+spielst. Interessant ist der Server, und den erkennt das Plugin selbst.</p>
+
+<p>Trage in deiner FiveM-Regel als Titelvorlage ein:</p>
+<p><code>{server} | dein Text</code></p>
+
+<p>Daraus wird zum Beispiel <code>StateV Roleplay | Boris Brown | !music</code>.
+Wechselst du im laufenden FiveM den Server, tauscht das Plugin nur den Teil vorne. Kennt
+es den Server nicht, fällt er samt Trennzeichen weg und dein Text bleibt allein
+stehen.</p>
+
+<h3>Woran es den Server erkennt</h3>
+<p>Zwei Quellen zusammen. Das FiveM-Log nennt bei jedem Verbinden die Ressourcen, die der
+Server angefordert hat. Die Angaben, die FiveM zu Servern speichert, enthalten dieselbe
+Liste und den Namen. Stimmen beide Listen überein, ist der Name der richtige. Passt
+nichts, bleibt der Name weg. Ein falscher Name im Titel wäre schlimmer als keiner.</p>
+
+<p>Für einen Server, dessen Angaben FiveM noch nicht gespeichert hat, gibt es keinen
+Namen. Öffne ihn einmal in der FiveM-Serverliste, dann legt FiveM die Angaben an.</p>
+
+<h2>Platzhalter im Titel</h2>
+
+<table width="100%">
+<tr><th width="22%">Platzhalter</th><th>Wird ersetzt durch</th></tr>
+<tr><td><code>{titel}</code></td><td>Deinen eigenen Titel, also den Teil, der nicht vom
+Plugin kommt. Schreibst du den Titel selbst um, gilt ab dann deiner.</td></tr>
+<tr><td><code>{server}</code></td><td>Den FiveM-Servernamen.</td></tr>
+<tr><td><code>{game}</code></td><td>Die Kategorie, die gerade gesetzt wird.</td></tr>
+<tr><td><code>{app}</code></td><td>Den Programmnamen ohne <code>.exe</code>.</td></tr>
+<tr><td><code>{window}</code></td><td>Den Fenstertitel des Programms.</td></tr>
+</table>
+
+<p><code>{server}</code> und <code>{titel}</code> nehmen ihr Trennzeichen mit, wenn sie
+leer sind. Aus <code>{server} | Mein Text</code> wird also <code>Mein Text</code> und
+nicht <code>| Mein Text</code>.</p>
+
+<h2>Streaminformation im Dock</h2>
+
+<p>Unten im Dock setzt du Titel, Kategorie, Tags, Sprache, Inhaltskennzeichnung und
+gesponserte Inhalte. Alles direkt über die Twitch-Schnittstelle.</p>
+
+<ul>
+<li>Titel: bis 140 Zeichen, der Zähler läuft mit.</li>
+<li>Tags: bis zehn, je bis 25 Zeichen, nur Buchstaben und Zahlen.</li>
+<li>Die Kennzeichnung <i>Mature-rated game</i> setzt Twitch selbst anhand der Kategorie.
+Sie steht grau da und lässt sich nicht von Hand ändern.</li>
+</ul>
+
+<div class="warn">
+<p><b>Das OBS-Fenster Streaminformation brauchst du nicht mehr.</b> Es ist ein
+Eingabeformular, kein Spiegel deines Kanals. Nach einem Wechsel über die Schnittstelle
+zeigt es weiter den alten Wert, und sein Fertig-Knopf schreibt diesen alten Wert zurück
+auf Twitch. Was wirklich auf deinem Kanal steht, siehst du hier im Dock.</p>
+</div>
+
+<h2>Manuelle Steuerung</h2>
+
+<ul>
+<li><b>Übernehmen</b>: setzt die gewählte Kategorie sofort, mit der Titelvorlage, die dazu
+gehört.</li>
+<li><b>Jetzt wechseln</b>: führt den anstehenden Wechsel sofort aus, ohne den Rest der
+Wartezeit.</li>
+<li><b>Timer zurücksetzen</b>: verwirft den anstehenden Wechsel.</li>
+<li><b>Kategorie sperren</b>: das Plugin ändert nichts mehr, bis du den Haken wieder
+entfernst. Gut für einen Sonderstream.</li>
+</ul>
+
+<h2>Updates</h2>
+
+<p>Das Plugin prüft bei jedem OBS-Start, ob es etwas Neues gibt, und während OBS läuft
+alle sechs Stunden noch einmal. Gibt es eine neuere Fassung, steht oben im Dock ein
+Hinweis.</p>
+
+<p>Ein Klick darauf lädt sie, fragt einmal nach Administratorrechten, beendet OBS, tauscht
+das Plugin aus und startet OBS wieder. Geht beim Austauschen etwas schief, kommt die
+vorherige Fassung zurück. Deine Einstellungen bleiben.</p>
+
+<p>Während du live bist oder aufnimmst, verweigert das Plugin das Update. Es müsste OBS
+beenden.</p>
+
+<h2>Wenn etwas nicht klappt</h2>
+
+<table width="100%">
+<tr><th width="40%">Was du siehst</th><th>Woran es liegt</th></tr>
+
+<tr><td>Die Kategorie ändert sich nicht, obwohl die Zeit um ist</td>
+<td>Steht <b>Kategorie sperren</b> an? Oder zeigt <i>Erkannter Kontext</i>
+<i>Ignoriert</i>, dann steht das Programm auf der Ignorierliste.</td></tr>
+
+<tr><td>Die feste Kategorie kommt nicht</td>
+<td>Eine Regel hat gegriffen. <i>Erkannter Kontext</i> zeigt dir welche Kategorie
+gewonnen hat. Die feste ist die letzte Stufe.</td></tr>
+
+<tr><td>Bei FiveM fehlt der Servername</td>
+<td>Steht <code>{server}</code> in der Titelvorlage deiner FiveM-Regel? Und kennt FiveM
+den Server schon? Sonst einmal in der Serverliste öffnen.</td></tr>
+
+<tr><td>Twitch lehnt den Wechsel ab</td>
+<td>Der Kategoriename muss genau so bei Twitch heißen. Und die Plattform-Aktion muss auf
+<b>Kategorie über API</b> stehen.</td></tr>
+
+<tr><td>Der Titel wird gesetzt, die Kategorie nicht</td>
+<td>Die Berechtigung fehlt. Twitch trennen und neu verbinden, mit <b>Gemeinsame
+Berechtigungen</b>.</td></tr>
+
+<tr><td>Die Suche nach Updates schlägt fehl</td>
+<td>Meist die Leitung. Der Grund steht im OBS-Log als <code>cURL error</code>. Später
+nochmal.</td></tr>
+
+<tr><td>Unten in diesem Fenster fehlt die Versionsnummer</td>
+<td>Dann läuft eine sehr frühe Fassung ohne Update-Prüfung. Die meldet sich nie von
+selbst. Einmal von Hand nachziehen.</td></tr>
+</table>
+
+<p>Alles, was das Plugin tut, landet im OBS-Log. Dort steht bei jedem Wechsel, ob er
+geklappt hat, und bei FiveM, welcher Server erkannt wurde.</p>
+
+<h2>Herkunft und Lizenz</h2>
+
+<p>Das ursprüngliche Plugin stammt von Fábio F. Magalhães (FabioZumbi12). Daraus
+übernommen und unverändert: die Twitch- und Trovo-Anmeldung, die Spielesuche in den
+Bibliotheken und das Dock.</p>
+
+<p>Smart Context Mode, die Streaminformation im Dock, die FiveM-Servererkennung und die
+Update-Funktion hat Tobias Schlothane ergänzt, kicodebyts.com.</p>
+
+<p>Lizenziert unter der GNU General Public License v2.0, wie das Original. Der Quelltext
+liegt offen auf github.com/Tobse2910/Game-Detector-V2.</p>
+
+</body>
+</html>

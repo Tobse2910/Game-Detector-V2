@@ -39,6 +39,9 @@ function New-GdPackage {
     Copy-Item $dll (Join-Path $plugin "obs-plugins\64bit") -Force
     Copy-Item (Join-Path $Repo "data\locale") (Join-Path $plugin "data\obs-plugins\game-detector") -Recurse -Force
     Copy-Item (Join-Path $Repo "data\update.ps1") (Join-Path $plugin "data\obs-plugins\game-detector") -Force
+    # Die Anleitung liegt neben dem Plugin, der Knopf in den Einstellungen liest sie.
+    Copy-Item (Join-Path $Repo "data\anleitung-de.html"), (Join-Path $Repo "data\anleitung-en.html") `
+              (Join-Path $plugin "data\obs-plugins\game-detector") -Force
     Copy-Item (Join-Path $Repo "dist\install.ps1"), (Join-Path $Repo "dist\uninstall.ps1"),
               (Join-Path $Repo "dist\ui.ps1") $plugin -Force
     foreach ($f in @("INSTALL.md", "README.md", "FORK-CHANGES.md")) {
@@ -54,7 +57,9 @@ function New-GdPackage {
         "plugin\obs-plugins\64bit\game-detector.dll",
         "plugin\data\obs-plugins\game-detector\update.ps1",
         "plugin\data\obs-plugins\game-detector\locale\de-DE.ini",
-        "plugin\data\obs-plugins\game-detector\locale\en-US.ini"
+        "plugin\data\obs-plugins\game-detector\locale\en-US.ini",
+        "plugin\data\obs-plugins\game-detector\anleitung-de.html",
+        "plugin\data\obs-plugins\game-detector\anleitung-en.html"
     )
     foreach ($p in $pflicht) {
         if (-not (Test-Path (Join-Path $stage $p))) { throw "Im Paket fehlt: $p" }

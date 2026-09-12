@@ -1,0 +1,244 @@
+<html>
+<head>
+<style type="text/css">
+  body { font-family: "Segoe UI", sans-serif; font-size: 10pt; color: #dcdcdc; }
+  h1 { font-size: 16pt; color: #ffffff; margin-bottom: 2px; }
+  h2 { font-size: 12pt; color: #e07a35; margin-top: 22px; margin-bottom: 4px; }
+  h3 { font-size: 10.5pt; color: #ffffff; margin-top: 14px; margin-bottom: 2px; }
+  p  { margin-top: 4px; margin-bottom: 8px; line-height: 135%; }
+  li { margin-bottom: 5px; line-height: 135%; }
+  code { font-family: Consolas, monospace; color: #9cdcfe; }
+  .lead { color: #b0b0b0; }
+  .kasten { background-color: #2a2119; padding: 8px; }
+  .warn { background-color: #2e1f1f; padding: 8px; }
+  table { border-collapse: collapse; }
+  th { background-color: #33373d; color: #ffffff; padding: 5px; text-align: left; }
+  td { padding: 5px; border-bottom: 1px solid #3a3f45; vertical-align: top; }
+</style>
+</head>
+<body>
+
+<h1>Game Detector V2</h1>
+<p class="lead">Smart Context Mode. The plugin sets your Twitch category and stream title
+based on what you are actually working in.</p>
+
+<h2>What it does</h2>
+
+<p>Once a second the plugin checks which window is in front. Not whether a game runs
+somewhere in the background, but which program you are using. Once the same program stays
+in front for a while, the plugin sets the matching category and the title on Twitch.</p>
+
+<p>The waiting time is deliberate. Nobody wants the category to jump because they checked
+the browser mid-round.</p>
+
+<h2>Set up once</h2>
+
+<h3>1. Connect Twitch</h3>
+<p>In this window under <b>Connections</b>, click <b>Twitch: Connect</b>. The browser
+opens, you confirm access, done. Leave <b>Shared permissions</b> ticked, otherwise the
+plugin lacks the right to change category and title.</p>
+
+<h3>2. Check the platform action</h3>
+<p>On the right it has to say <b>Category via API</b>. The other setting only sends a chat
+command to a bot and discards your title.</p>
+
+<h3>3. Turn on Smart Context Mode</h3>
+<p>In the dock, not here. Tick <b>Smart Context Mode</b> and pick a <b>delay</b>. The
+default is 5 minutes.</p>
+
+<h2>Reading the dock</h2>
+
+<table width="100%">
+<tr><th width="34%">Row</th><th>Meaning</th></tr>
+<tr><td>Active application</td><td>The program in front. With FiveM the server follows in
+brackets, on the empty screen it says <code>(desktop)</code>.</td></tr>
+<tr><td>Detected context</td><td>The category this leads to. <i>Ignored</i> means the
+plugin changes nothing. <code>(fixed category)</code> means it comes from the fallback and
+not from a rule.</td></tr>
+<tr><td>Active since</td><td>How long this program has been in front.</td></tr>
+<tr><td>Switch in</td><td>How much time is left. A dash means nothing is
+pending.</td></tr>
+<tr><td>Current Twitch category</td><td>What your channel really says, read from
+Twitch.</td></tr>
+<tr><td>Last change</td><td>When the plugin last set something, and whether it
+worked.</td></tr>
+</table>
+
+<h2>Rules</h2>
+
+<p>A rule says: this program means this category. Under <b>Manage Smart Context
+rules</b>. A rule has six fields.</p>
+
+<ul>
+<li><b>Process</b>: the file name, for example <code>FiveM_*.exe</code>. A <code>*</code>
+stands for any number of characters, a <code>?</code> for one. Useful for games whose file
+name carries the version.</li>
+<li><b>Window title</b>: leave empty unless you want to tell one program apart by
+title.</li>
+<li><b>Category</b>: the name as Twitch spells it. Twitch rejects typos.</li>
+<li><b>Title template</b>: empty leaves your title alone. Otherwise see the placeholders
+below.</li>
+<li><b>Delay</b>: an own time for this rule, or the default.</li>
+<li><b>Priority</b>: when several rules match, the highest wins. On a tie an exact file
+name beats one with wildcards.</li>
+</ul>
+
+<p>Games from your Steam, Epic, GOG and Ubisoft libraries are recognised without a rule.
+A rule with an exact file name still wins, because you wrote it on purpose.</p>
+
+<h2>Ignored applications</h2>
+
+<p>Programs on this list never change the category. Discord, Spotify, OBS itself, the
+Stream Deck, the game launchers. They also do not age the timer: talking in Discord for
+two minutes mid-round and coming back does not cost the time you collected.</p>
+
+<p>In the dock under <b>Ignored applications</b>. Click a row, <b>Remove</b>, then close
+with <b>OK</b>. Without OK nothing is saved.</p>
+
+<div class="kasten">
+<p>The empty desktop belongs to <code>explorer.exe</code> but does not count as a program.
+It bypasses the rules so the fixed category can apply. An Explorer window with folders
+stays a program like any other.</p>
+</div>
+
+<h2>Fixed category when nothing is recognised</h2>
+
+<p>In the dock, below the delay. Tick it, enter a category, for example <code>Just
+Chatting</code> or <code>IRL</code>. From then on the plugin sets this category whenever
+you are in something no rule covers.</p>
+
+<p>This is the last resort. A rule always wins. Sitting in Visual Studio Code with a rule
+for it gets you that rule's category, not the fixed one. Change or delete the rule if you
+want it otherwise.</p>
+
+<p>The title falls back to your own. Leaving FiveM drops the server name from it.</p>
+
+<h2>FiveM: the server in the title</h2>
+
+<p>With FiveM the category is always Grand Theft Auto V, whatever server you play on. The
+server is the interesting part, and the plugin works it out itself.</p>
+
+<p>Put this in your FiveM rule as the title template:</p>
+<p><code>{server} | your text</code></p>
+
+<p>That turns into <code>StateV Roleplay | Boris Brown | !music</code>. Switch servers
+inside a running FiveM and the plugin swaps only the part in front. When it does not know
+the server, that part drops out with its separator and your text stands alone.</p>
+
+<h3>How it recognises the server</h3>
+<p>Two sources together. The FiveM log names the resources the server requested on every
+connect. The server details FiveM stores carry the same list plus the name. When both
+lists agree, the name is the right one. When nothing matches, no name is used. A wrong
+name in the title would be worse than none.</p>
+
+<p>A server whose details FiveM has not stored yet yields no name. Open it once in the
+FiveM server list and FiveM stores them.</p>
+
+<h2>Title placeholders</h2>
+
+<table width="100%">
+<tr><th width="22%">Placeholder</th><th>Replaced by</th></tr>
+<tr><td><code>{title}</code></td><td>Your own title, the part that does not come from the
+plugin. Rewrite the title yourself and yours counts from then on.</td></tr>
+<tr><td><code>{server}</code></td><td>The FiveM server name.</td></tr>
+<tr><td><code>{game}</code></td><td>The category being set.</td></tr>
+<tr><td><code>{app}</code></td><td>The program name without <code>.exe</code>.</td></tr>
+<tr><td><code>{window}</code></td><td>The window title of the program.</td></tr>
+</table>
+
+<p><code>{server}</code> and <code>{title}</code> take their separator with them when
+empty. So <code>{server} | My text</code> becomes <code>My text</code> and not <code>| My
+text</code>.</p>
+
+<h2>Stream information in the dock</h2>
+
+<p>At the bottom of the dock you set title, category, tags, language, content
+classification and branded content. All through the Twitch interface.</p>
+
+<ul>
+<li>Title: up to 140 characters, with a live counter.</li>
+<li>Tags: up to ten, each up to 25 characters, letters and digits only.</li>
+<li>Twitch sets the <i>Mature-rated game</i> label itself based on the category. It shows
+greyed out and cannot be changed by hand.</li>
+</ul>
+
+<div class="warn">
+<p><b>You no longer need OBS' own Stream Information window.</b> It is an input form, not a
+mirror of your channel. After a change through the interface it still shows the old value,
+and its Done button writes that old value back to Twitch. What your channel really says is
+here in the dock.</p>
+</div>
+
+<h2>Manual control</h2>
+
+<ul>
+<li><b>Apply</b>: sets the chosen category right away, with its title template.</li>
+<li><b>Switch now</b>: carries out the pending switch without the rest of the wait.</li>
+<li><b>Reset timer</b>: drops the pending switch.</li>
+<li><b>Lock category</b>: the plugin changes nothing until you untick it. Handy for a
+special stream.</li>
+</ul>
+
+<h2>Updates</h2>
+
+<p>The plugin checks for a newer version on every OBS start, and every six hours while OBS
+runs. When there is one, a notice sits at the top of the dock.</p>
+
+<p>One click downloads it, asks once for administrator rights, closes OBS, swaps the plugin
+and starts OBS again. If the swap goes wrong, the previous version comes back. Your
+settings stay.</p>
+
+<p>While you are live or recording the plugin refuses to update. It would have to close
+OBS.</p>
+
+<h2>When something does not work</h2>
+
+<table width="100%">
+<tr><th width="40%">What you see</th><th>What causes it</th></tr>
+
+<tr><td>The category does not change although the time is up</td>
+<td>Is <b>Lock category</b> ticked? Or does <i>Detected context</i> say <i>Ignored</i>,
+which means the program is on the ignore list.</td></tr>
+
+<tr><td>The fixed category never applies</td>
+<td>A rule matched. <i>Detected context</i> tells you which category won. The fixed one is
+the last resort.</td></tr>
+
+<tr><td>The server name is missing with FiveM</td>
+<td>Is <code>{server}</code> in your FiveM rule's title template? And does FiveM know the
+server yet? If not, open it once in the server list.</td></tr>
+
+<tr><td>Twitch rejects the change</td>
+<td>The category name has to match Twitch exactly. And the platform action has to be
+<b>Category via API</b>.</td></tr>
+
+<tr><td>The title is set but the category is not</td>
+<td>The permission is missing. Disconnect Twitch and connect again with <b>Shared
+permissions</b>.</td></tr>
+
+<tr><td>The update check fails</td>
+<td>Usually the connection. The reason sits in the OBS log as <code>cURL error</code>. Try
+again later.</td></tr>
+
+<tr><td>The version number is missing at the bottom of this window</td>
+<td>Then a very early build without update checking is running. It never reports for
+itself. Download once by hand.</td></tr>
+</table>
+
+<p>Everything the plugin does lands in the OBS log. Every change is logged with its
+outcome, and with FiveM the recognised server as well.</p>
+
+<h2>Origin and licence</h2>
+
+<p>The original plugin comes from Fábio F. Magalhães (FabioZumbi12). Taken from it
+unchanged: the Twitch and Trovo sign-in, the game search across the libraries, and the
+dock.</p>
+
+<p>Smart Context Mode, the stream information in the dock, the FiveM server detection and
+the update function were added by Tobias Schlothane, kicodebyts.com.</p>
+
+<p>Licensed under the GNU General Public License v2.0, like the original. The source sits
+openly at github.com/Tobse2910/Game-Detector-V2.</p>
+
+</body>
+</html>

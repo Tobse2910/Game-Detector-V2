@@ -12,6 +12,9 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QTextBrowser>
+#include <QFile>
+#include <QDialogButtonBox>
 #include <QPushButton>
 #include <QFrame>
 #include <QDesktopServices>
@@ -76,6 +79,13 @@ GameDetectorSettingsDialog::GameDetectorSettingsDialog(QWidget *parent) : QDialo
 	manageSmartContextRulesButton = new QPushButton(obs_module_text("SmartContext.ManageRules"));
 	manageSmartContextRulesButton->setToolTip(obs_module_text("SmartContext.ManageRules.Tooltip"));
 	scanLayout->addWidget(manageSmartContextRulesButton);
+
+	// Die Anleitung gehoert dorthin, wo man ohnehin nach Einstellungen sucht, und
+	// nicht in eine Textdatei neben dem Plugin, die keiner findet.
+	anleitungButton = new QPushButton(obs_module_text("Settings.Manual"));
+	anleitungButton->setToolTip(obs_module_text("Settings.Manual.Tooltip"));
+	anleitungButton->setCursor(Qt::PointingHandCursor);
+	scanLayout->addWidget(anleitungButton);
 
 	scanGroup->setLayout(scanLayout);
 	mainLayout->addWidget(scanGroup);
@@ -254,6 +264,7 @@ GameDetectorSettingsDialog::GameDetectorSettingsDialog(QWidget *parent) : QDialo
 	connect(manageGamesButton, &QPushButton::clicked, this, &GameDetectorSettingsDialog::onManageGamesClicked);
 	connect(manageSmartContextRulesButton, &QPushButton::clicked, this,
 		&GameDetectorSettingsDialog::onManageSmartContextRulesClicked);
+	connect(anleitungButton, &QPushButton::clicked, this, &GameDetectorSettingsDialog::onAnleitungClicked);
 	connect(authButton, &QPushButton::clicked, this, [this]() {
 		TwitchAuthManager::get().startAuthentication(actionComboBox->currentIndex(),
 							     unifiedAuthCheckbox->isChecked() ? 1 : 0);
@@ -463,6 +474,47 @@ void GameDetectorSettingsDialog::onManageGamesClicked()
 {
 	GameListDialog dialog(this);
 	dialog.exec();
+}
+
+/*
+ * Zeigt die Anleitung in einem eigenen Fenster. Der Text liegt als HTML neben dem
+ * Plugin, nicht im Quelltext: so laesst er sich pflegen, ohne neu zu bauen, und
+ * QTextBrowser kann ihn mit Ueberschriften und Tabellen darstellen.
+ */
+void GameDetectorSettingsDialog::onAnleitungClicked()
+{
+	const QString sprache = QString::fromUtf8(obs_module_text("Settings.Manual.File"));
+
+	QString html;
+	char *pfad = obs_module_file(sprache.toUtf8().constData());
+	if (pfad) {
+		QFile datei(QString::fromUtf8(pfad));
+		if (datei.open(QIODevice::ReadOnly))
+			html = QString::fromUtf8(datei.readAll());
+		bfree(pfad);
+	}
+
+	if (html.isEmpty()) {
+		// Ohne die Datei bleibt wenigstens der Weg zur Anleitung im Netz.
+		html = QString("<p>%1</p>").arg(obs_module_text("Settings.Manual.Missing"));
+	}
+
+	QDialog fenster(this);
+	fenster.setWindowTitle(obs_module_text("Settings.Manual.Title"));
+	fenster.resize(760, 680);
+
+	QVBoxLayout *layout = new QVBoxLayout(&fenster);
+
+	QTextBrowser *browser = new QTextBrowser(&fenster);
+	browser->setOpenExternalLinks(true);
+	browser->setHtml(html);
+	layout->addWidget(browser, 1);
+
+	QDialogButtonBox *knoepfe = new QDialogButtonBox(QDialogButtonBox::Close, &fenster);
+	connect(knoepfe, &QDialogButtonBox::rejected, &fenster, &QDialog::accept);
+	layout->addWidget(knoepfe);
+
+	fenster.exec();
 }
 
 void GameDetectorSettingsDialog::onManageSmartContextRulesClicked()
