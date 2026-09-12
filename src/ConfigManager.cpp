@@ -159,6 +159,9 @@ void ConfigManager::load()
 	if (!obs_data_has_user_value(settings, UPDATE_CHECK_LAST_KEY))
 		obs_data_set_int(settings, UPDATE_CHECK_LAST_KEY, 0);
 
+	if (!obs_data_has_user_value(settings, SMART_CONTEXT_FALLBACK_CATEGORY_KEY))
+		obs_data_set_string(settings, SMART_CONTEXT_FALLBACK_CATEGORY_KEY, "Just Chatting");
+
 	if (!obs_data_has_user_value(settings, SMART_CONTEXT_RULES_KEY)) {
 		obs_data_array_t *default_rules = createDefaultSmartContextRules();
 		obs_data_set_array(settings, SMART_CONTEXT_RULES_KEY, default_rules);
@@ -541,6 +544,36 @@ QString ConfigManager::getSmartContextAnnounceMessage() const
 	if (!settings)
 		return "Category changed to {game}";
 	return QString::fromUtf8(obs_data_get_string(settings, SMART_CONTEXT_ANNOUNCE_MESSAGE_KEY));
+}
+
+bool ConfigManager::getSmartContextFallbackEnabled() const
+{
+	if (!settings)
+		return false;
+	return obs_data_get_bool(settings, SMART_CONTEXT_FALLBACK_ENABLED_KEY);
+}
+
+void ConfigManager::setSmartContextFallbackEnabled(bool value)
+{
+	if (!settings)
+		return;
+	obs_data_set_bool(settings, SMART_CONTEXT_FALLBACK_ENABLED_KEY, value);
+}
+
+QString ConfigManager::getSmartContextFallbackCategory() const
+{
+	if (!settings)
+		return "Just Chatting";
+	const QString wert = QString::fromUtf8(
+		obs_data_get_string(settings, SMART_CONTEXT_FALLBACK_CATEGORY_KEY));
+	return wert.isEmpty() ? QString("Just Chatting") : wert;
+}
+
+void ConfigManager::setSmartContextFallbackCategory(const QString &value)
+{
+	if (!settings)
+		return;
+	obs_data_set_string(settings, SMART_CONTEXT_FALLBACK_CATEGORY_KEY, value.toUtf8().constData());
 }
 
 QString ConfigManager::getSmartContextBaseTitle() const

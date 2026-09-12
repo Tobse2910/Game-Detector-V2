@@ -248,6 +248,8 @@ void SmartContextManager::reloadSettings()
 	globalDelayMs = ConfigManager::get().getSmartContextDelay() * 1000;
 	switchCooldownMs = ConfigManager::get().getSmartContextSwitchCooldown() * 1000;
 	graceMs = ConfigManager::get().getSmartContextGrace() * 1000;
+	fallbackAktiv = ConfigManager::get().getSmartContextFallbackEnabled();
+	fallbackKategorie = ConfigManager::get().getSmartContextFallbackCategory().trimmed();
 }
 
 void SmartContextManager::start()
@@ -348,6 +350,25 @@ SmartContextResolution SmartContextManager::resolve(const QString &exeName, cons
 	// A rule that neither ignores nor names a category cannot do anything useful.
 	if (best.matched && !best.ignored && best.category.isEmpty())
 		best.ignored = true;
+
+	/*
+	 * Ganz zum Schluss die Ausweichkategorie: sie greift nur, wenn wirklich
+	 * nichts erkannt wurde, also weder eine Regel noch die Spieleliste etwas
+	 * hergab. Ein ignoriertes Programm bleibt weiter neutral, denn genau das ist
+	 * der Sinn der Ignorierliste: ein Blick in Discord soll die Kategorie nicht
+	 * bewegen. Gewechselt wird auch hier erst nach der eingestellten Zeit, ein
+	 * kurzer Ausflug auf den Schreibtisch kostet also nichts.
+	 */
+	if (!best.matched && fallbackAktiv && !fallbackKategorie.isEmpty()) {
+		best = SmartContextResolution();
+		best.matched = true;
+		best.fromFallback = true;
+		best.category = fallbackKategorie;
+		// Der eigene Titel des Nutzers, ohne einen Servernamen davor: wer FiveM
+		// verlaesst, soll nicht weiter den Server im Titel stehen haben.
+		best.titleTemplate = "{titel}";
+		best.ruleLabel = exeName;
+	}
 
 	return best;
 }

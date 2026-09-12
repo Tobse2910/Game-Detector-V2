@@ -94,6 +94,10 @@ public:
 	int getSmartContextGrace() const;
 	bool getSmartContextAnnounceChat() const;
 	QString getSmartContextAnnounceMessage() const;
+	bool getSmartContextFallbackEnabled() const;
+	void setSmartContextFallbackEnabled(bool value);
+	QString getSmartContextFallbackCategory() const;
+	void setSmartContextFallbackCategory(const QString &value);
 	QString getSmartContextBaseTitle() const;
 	void setSmartContextBaseTitle(const QString &value);
 	QString getSmartContextOwnTitle() const;
@@ -124,6 +128,10 @@ public:
 	// und der Titel, den das Plugin zuletzt selbst gesetzt hat. Beide muessen einen
 	// OBS-Neustart ueberleben, sonst waere nach dem Start nicht mehr
 	// unterscheidbar, was vom Nutzer stammt und was vom Plugin.
+	// Kategorie, die gesetzt wird, wenn nichts erkannt wird. Standardmaessig aus,
+	// damit sich fuer bestehende Nutzer nichts von selbst aendert.
+	static constexpr const char *SMART_CONTEXT_FALLBACK_ENABLED_KEY = "smart_context_fallback_enabled";
+	static constexpr const char *SMART_CONTEXT_FALLBACK_CATEGORY_KEY = "smart_context_fallback_category";
 	static constexpr const char *SMART_CONTEXT_BASE_TITLE_KEY = "smart_context_base_title";
 	static constexpr const char *SMART_CONTEXT_OWN_TITLE_KEY = "smart_context_own_title";
 

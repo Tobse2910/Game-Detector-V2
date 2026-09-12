@@ -37,6 +37,7 @@ struct SmartContextResolution {
 	bool matched = false;  // a rule or the game list produced a category
 	bool ignored = false;  // explicitly ignored, keep the current category
 	bool fromGameList = false;
+	bool fromFallback = false; // nichts erkannt, Ausweichkategorie greift
 	QString category;
 	QString titleTemplate;
 	int delaySeconds = 0;
@@ -109,6 +110,8 @@ private:
 	QString currentWindowTitle;
 	QString currentServerName;
 	// Der eigene Titel des Nutzers und der, den das Plugin zuletzt gesetzt hat.
+	bool fallbackAktiv = false;
+	QString fallbackKategorie;
 	QString grundTitel;
 	QString selbstGesetzterTitel;
 	// Die letzten selbst gesetzten Titel. Ein Abruf kann Twitch erreichen, bevor

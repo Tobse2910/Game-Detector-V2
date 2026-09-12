@@ -462,6 +462,28 @@ void GameDetectorDock::buildSmartContextUi(QVBoxLayout *mainLayout)
 	delayLayout->addWidget(smartDelayCombo, 1);
 	smartLayout->addLayout(delayLayout);
 
+	// Ausweichkategorie: was gesetzt wird, wenn nichts erkannt wurde. Die Liste
+	// ist nur ein Vorschlag, das Feld laesst sich frei beschreiben, denn Twitch
+	// kennt weit mehr Kategorien als hier sinnvoll hineinpassen.
+	fallbackCheckbox = new QCheckBox(obs_module_text("SmartContext.Fallback"));
+	fallbackCheckbox->setToolTip(obs_module_text("SmartContext.Fallback.Tooltip"));
+	smartLayout->addWidget(fallbackCheckbox);
+
+	QHBoxLayout *fallbackLayout = new QHBoxLayout();
+	fallbackLayout->setContentsMargins(18, 0, 0, 0);
+	fallbackLayout->addWidget(new QLabel(obs_module_text("SmartContext.Fallback.CategoryLabel")));
+	fallbackCategoryCombo = new QComboBox();
+	fallbackCategoryCombo->setEditable(true);
+	fallbackCategoryCombo->addItem("Just Chatting");
+	fallbackCategoryCombo->addItem("IRL");
+	fallbackCategoryCombo->addItem("Special Events");
+	fallbackCategoryCombo->addItem("Music");
+	fallbackCategoryCombo->addItem("Art");
+	fallbackCategoryCombo->addItem("Software and Game Development");
+	fallbackCategoryCombo->setToolTip(obs_module_text("SmartContext.Fallback.Category.Tooltip"));
+	fallbackLayout->addWidget(fallbackCategoryCombo, 1);
+	smartLayout->addLayout(fallbackLayout);
+
 	QFormLayout *statusForm = new QFormLayout();
 	statusForm->setLabelAlignment(Qt::AlignLeft);
 	statusForm->setContentsMargins(0, 6, 0, 0);
@@ -550,6 +572,10 @@ void GameDetectorDock::buildSmartContextUi(QVBoxLayout *mainLayout)
 	connect(lockCategoryCheckbox, &QCheckBox::toggled, this, &GameDetectorDock::onLockCategoryToggled);
 	connect(smartDelayCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
 		&GameDetectorDock::onSmartDelayChanged);
+
+	connect(fallbackCheckbox, &QCheckBox::toggled, this, &GameDetectorDock::onFallbackChanged);
+	connect(fallbackCategoryCombo, &QComboBox::currentTextChanged, this,
+		&GameDetectorDock::onFallbackChanged);
 
 	connect(manualApplyButton, &QPushButton::clicked, this, &GameDetectorDock::onManualApplyClicked);
 	connect(applyNowButton, &QPushButton::clicked, this, &GameDetectorDock::onApplyNowClicked);
@@ -651,6 +677,17 @@ void GameDetectorDock::onSmartDelayChanged(int index)
 {
 	Q_UNUSED(index);
 	ConfigManager::get().setSmartContextDelay(smartDelayCombo->currentData().toInt());
+	ConfigManager::get().save(ConfigManager::get().getSettings());
+	SmartContextManager::get().reloadSettings();
+}
+
+void GameDetectorDock::onFallbackChanged()
+{
+	const bool aktiv = fallbackCheckbox->isChecked();
+	fallbackCategoryCombo->setEnabled(aktiv);
+
+	ConfigManager::get().setSmartContextFallbackEnabled(aktiv);
+	ConfigManager::get().setSmartContextFallbackCategory(fallbackCategoryCombo->currentText().trimmed());
 	ConfigManager::get().save(ConfigManager::get().getSettings());
 	SmartContextManager::get().reloadSettings();
 }
@@ -813,6 +850,15 @@ void GameDetectorDock::loadSettingsFromConfig()
 	smartDelayCombo->setCurrentIndex(delayIndex >= 0 ? delayIndex : smartDelayCombo->findData(300));
 	smartDelayCombo->blockSignals(false);
 
+	const bool fallbackAktiv = ConfigManager::get().getSmartContextFallbackEnabled();
+	fallbackCheckbox->blockSignals(true);
+	fallbackCheckbox->setChecked(fallbackAktiv);
+	fallbackCheckbox->blockSignals(false);
+
+	fallbackCategoryCombo->blockSignals(true);
+	fallbackCategoryCombo->setCurrentText(ConfigManager::get().getSmartContextFallbackCategory());
+	fallbackCategoryCombo->blockSignals(false);
+	fallbackCategoryCombo->setEnabled(fallbackAktiv);
 
 	applySmartContextMode();
 	checkWarningsAndStatus();

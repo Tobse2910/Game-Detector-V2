@@ -37,6 +37,8 @@ private:
 	QCheckBox *smartContextCheckbox = nullptr;
 	QCheckBox *lockCategoryCheckbox = nullptr;
 	QComboBox *smartDelayCombo = nullptr;
+	QCheckBox *fallbackCheckbox = nullptr;
+	QComboBox *fallbackCategoryCombo = nullptr;
 	QLabel *smartAppValueLabel = nullptr;
 	QLabel *smartContextValueLabel = nullptr;
 	QLabel *smartActiveSinceValueLabel = nullptr;
@@ -106,6 +108,7 @@ private slots:
 	void onSmartContextToggled(bool enabled);
 	void onLockCategoryToggled(bool locked);
 	void onSmartDelayChanged(int index);
+	void onFallbackChanged();
 	void onSmartContextStatusUpdated();
 	void onSmartContextApplied(const QString &category, const QString &title);
 	void onManualApplyClicked();
