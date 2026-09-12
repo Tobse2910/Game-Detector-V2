@@ -38,6 +38,15 @@ Alt-Tab-Toleranz, und ignorierte Programme sind vollständig neutral.
 Kategorie, Titelvorlage, eigene Verzögerung, Ignorieren-Schalter und Priorität. Dazu ein
 eigener Editor für ignorierte Programme mit "aktuelles Programm hinzufügen".
 
+**FiveM: der Server im Titel.** Bei FiveM ist die Kategorie immer "Grand Theft Auto V",
+interessant ist der Server. Den erkennt das Plugin selbst und setzt ihn mit der Vorlage
+`{server} | {titel}` vor deinen eigenen Titel, ohne davon etwas zu verlieren. Ein
+Serverwechsel im laufenden FiveM wird innerhalb weniger Sekunden bemerkt. Erkannt wird
+über zwei Quellen zugleich: die Ressourcenliste der laufenden Verbindung aus dem
+FiveM-Log und die Serverangaben in FiveMs eigenem Zwischenspeicher. Passt beides nicht
+zusammen, bleibt der Name weg und dein Titel unangetastet; ein falscher Name wäre
+schlimmer als keiner.
+
 **Streaminformation im Dock.** Titel, Kategorie mit Suche und Titelbild, Tags,
 Stream-Sprache, Inhaltskennzeichnung und gesponserte Inhalte, alles direkt über die
 Twitch-API. Das OBS-Fenster "Streaminformation" brauchst du dafür nicht mehr; es ist

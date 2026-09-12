@@ -543,6 +543,34 @@ QString ConfigManager::getSmartContextAnnounceMessage() const
 	return QString::fromUtf8(obs_data_get_string(settings, SMART_CONTEXT_ANNOUNCE_MESSAGE_KEY));
 }
 
+QString ConfigManager::getSmartContextBaseTitle() const
+{
+	if (!settings)
+		return QString();
+	return QString::fromUtf8(obs_data_get_string(settings, SMART_CONTEXT_BASE_TITLE_KEY));
+}
+
+void ConfigManager::setSmartContextBaseTitle(const QString &value)
+{
+	if (!settings)
+		return;
+	obs_data_set_string(settings, SMART_CONTEXT_BASE_TITLE_KEY, value.toUtf8().constData());
+}
+
+QString ConfigManager::getSmartContextOwnTitle() const
+{
+	if (!settings)
+		return QString();
+	return QString::fromUtf8(obs_data_get_string(settings, SMART_CONTEXT_OWN_TITLE_KEY));
+}
+
+void ConfigManager::setSmartContextOwnTitle(const QString &value)
+{
+	if (!settings)
+		return;
+	obs_data_set_string(settings, SMART_CONTEXT_OWN_TITLE_KEY, value.toUtf8().constData());
+}
+
 bool ConfigManager::getUpdateCheckEnabled() const
 {
 	if (!settings)
@@ -648,10 +676,10 @@ obs_data_array_t *ConfigManager::createDefaultSmartContextRules()
 	pushRule(rules, makeRule("Wardogs*.exe", "WARDOGS", NO_TITLE, false, 50));
 	// Bei FiveM ist die Kategorie immer dieselbe, interessant ist der Server.
 	// {server} liest ihn aus den Angaben, die FiveM beim Verbinden ablegt, und
-	// steht am Anfang des Titels. Der eigene Text kommt dahinter, zum Beispiel
-	// "{server} | !music !wunsch". Ist kein Server bekannt, faellt der
-	// Platzhalter samt Trennzeichen weg.
-	static const char *const FIVEM_TITLE = "{server}";
+	// steht am Anfang des Titels. {titel} ist der eigene Titel des Nutzers, so
+	// dass davon nichts verloren geht. Ist kein Server bekannt, faellt der
+	// Platzhalter samt Trennzeichen weg und es bleibt genau der eigene Titel.
+	static const char *const FIVEM_TITLE = "{server} | {titel}";
 	pushRule(rules, makeRule("FiveM.exe", "Grand Theft Auto V", FIVEM_TITLE, false, 50));
 	pushRule(rules, makeRule("FiveM_*.exe", "Grand Theft Auto V", FIVEM_TITLE, false, 50));
 

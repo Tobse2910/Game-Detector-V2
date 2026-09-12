@@ -13,6 +13,7 @@
 #ifndef SMARTCONTEXTMANAGER_H
 #define SMARTCONTEXTMANAGER_H
 
+#include <QStringList>
 #include <QObject>
 #include <QString>
 #include <QList>
@@ -77,6 +78,7 @@ public:
 
 	const QList<SmartContextRule> &currentRules() const { return rules; }
 	QString renderTitle(const QString &templateText, const QString &category) const;
+	void uebernimmLiveTitel(const QString &liveTitel);
 
 	static QList<SmartContextRule> loadRulesFromConfig();
 
@@ -106,6 +108,13 @@ private:
 	QString currentProcess;
 	QString currentWindowTitle;
 	QString currentServerName;
+	// Der eigene Titel des Nutzers und der, den das Plugin zuletzt gesetzt hat.
+	QString grundTitel;
+	QString selbstGesetzterTitel;
+	// Die letzten selbst gesetzten Titel. Ein Abruf kann Twitch erreichen, bevor
+	// der neue Titel dort steht, und liefert dann einen aelteren von uns. Keiner
+	// aus dieser Liste darf als eigener Titel des Nutzers durchgehen.
+	QStringList zuletztGesetzteTitel;
 	bool fiveMTitleLogged = false;
 	QString currentContext;
 	QString currentRuleLabel;

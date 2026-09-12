@@ -14,6 +14,7 @@
 #include <QDateTime>
 #include <QFileInfo>
 #include <QRegularExpression>
+#include <QStringList>
 #include <obs-module.h>
 #include <obs-frontend-api.h>
 
@@ -126,11 +127,20 @@ SmartContextManager::SmartContextManager(QObject *parent) : QObject(parent)
 	// until we have made a decision of our own.
 	connect(&PlatformManager::get(), &PlatformManager::categoriesFetched, this,
 		[this](const QHash<QString, QString> &categories) {
-			if (hasSwitchedOnce || !categories.contains("Twitch"))
+			if (!categories.contains("Twitch"))
 				return;
 
 			const QString data = categories.value("Twitch");
 			const int separator = data.indexOf("|||");
+
+			// Der Titelabgleich muss vor dem Abbruch weiter unten stehen: er
+			// gehoert zu jedem Abruf, nicht nur zum ersten.
+			if (separator >= 0)
+				uebernimmLiveTitel(data.mid(separator + 3).trimmed());
+
+			if (hasSwitchedOnce)
+				return;
+
 			const QString category = (separator >= 0 ? data.left(separator) : data).trimmed();
 			if (category.isEmpty() || category == currentAppliedCategory)
 				return;
@@ -146,6 +156,53 @@ SmartContextManager::SmartContextManager(QObject *parent) : QObject(parent)
 
 			emit statusUpdated();
 		});
+}
+
+/*
+ * Haelt den eigenen Titel des Nutzers fest, also den Teil, der nicht vom Plugin
+ * stammt. Erkennungsmerkmal: steht auf dem Kanal genau der Titel, den das Plugin
+ * zuletzt selbst gesetzt hat, dann hat niemand etwas geaendert und der bisherige
+ * Grundtitel gilt weiter. Steht dort etwas anderes, hat der Nutzer den Titel in
+ * die Hand genommen, und das ist ab dann der Grundtitel.
+ *
+ * Beides liegt in den Einstellungen, damit es einen OBS-Neustart uebersteht.
+ * Ohne das waere nach dem Start der Titel "StateV Roleplay | Mein Text" als
+ * Grundtitel durchgegangen und beim naechsten Wechsel stuende dort
+ * "Corleone City | StateV Roleplay | Mein Text".
+ */
+void SmartContextManager::uebernimmLiveTitel(const QString &liveTitel)
+{
+	if (liveTitel.isEmpty())
+		return;
+
+	// Alles, was wir selbst gesetzt haben, ist kein eigener Titel des Nutzers.
+	// Die Liste statt nur des letzten Werts, weil ein Abruf Twitch erreichen
+	// kann, bevor der neue Titel dort angekommen ist.
+	if (!selbstGesetzterTitel.isEmpty() && liveTitel == selbstGesetzterTitel)
+		return;
+	if (zuletztGesetzteTitel.contains(liveTitel))
+		return;
+
+	QString neuerGrund = liveTitel;
+
+	// Sicherheitsnetz: hat der Nutzer den Servernamen selbst vorangestellt,
+	// oder stammt der Titel aus einer aelteren Fassung ohne diese Verfolgung,
+	// dann wird er hier abgetrennt statt doppelt zu erscheinen.
+	if (!currentServerName.isEmpty() && neuerGrund.startsWith(currentServerName, Qt::CaseInsensitive)) {
+		const QString rest = neuerGrund.mid(currentServerName.length());
+		static const QRegularExpression fuehrenderTrenner("^\\s*(?:[|\\-–•/]|::|:)\\s*");
+		const QRegularExpressionMatch treffer = fuehrenderTrenner.match(rest);
+		if (treffer.hasMatch())
+			neuerGrund = rest.mid(treffer.capturedLength()).trimmed();
+	}
+
+	if (neuerGrund == grundTitel)
+		return;
+
+	grundTitel = neuerGrund;
+	ConfigManager::get().setSmartContextBaseTitle(grundTitel);
+	blog(LOG_INFO, "[GameDetector/SmartContext] Own title noted: '%s'",
+	     qUtf8Printable(grundTitel));
 }
 
 QList<SmartContextRule> SmartContextManager::loadRulesFromConfig()
@@ -200,6 +257,12 @@ void SmartContextManager::start()
 
 	clearCandidate();
 	parkedProgress.clear();
+
+	grundTitel = ConfigManager::get().getSmartContextBaseTitle();
+	selbstGesetzterTitel = ConfigManager::get().getSmartContextOwnTitle();
+	zuletztGesetzteTitel.clear();
+	if (!selbstGesetzterTitel.isEmpty())
+		zuletztGesetzteTitel.append(selbstGesetzterTitel);
 
 	// Assume what the platform layer last set, then correct it as soon as the real
 	// category comes back from the platform (see the categoriesFetched handler).
@@ -308,6 +371,11 @@ QString SmartContextManager::renderTitle(const QString &templateText, const QStr
 	// Platzhalter samt Trennzeichen weg, damit kein " | " am Anfang stehen bleibt.
 	ersetzeMitTrenner(text, "{server}", currentServerName);
 
+	// Der eigene Titel des Nutzers. Damit bleibt bei "{server} | {titel}" alles
+	// erhalten, was er selbst geschrieben hat, und der Server steht davor.
+	ersetzeMitTrenner(text, "{titel}", grundTitel);
+	ersetzeMitTrenner(text, "{title}", grundTitel);
+
 	return text.simplified();
 }
 
@@ -406,6 +474,19 @@ bool SmartContextManager::pushCategory(const QString &category, const QString &t
 		return false;
 
 	const QString title = renderTitle(titleTemplate, category);
+
+	// Merken, was wir selbst gesetzt haben. Nur daran laesst sich beim naechsten
+	// Abruf erkennen, ob der Titel auf dem Kanal von uns stammt oder vom Nutzer.
+	if (!title.isEmpty() && title != selbstGesetzterTitel) {
+		selbstGesetzterTitel = title;
+		ConfigManager::get().setSmartContextOwnTitle(title);
+	}
+	if (!title.isEmpty() && !zuletztGesetzteTitel.contains(title)) {
+		zuletztGesetzteTitel.append(title);
+		while (zuletztGesetzteTitel.size() > 5)
+			zuletztGesetzteTitel.removeFirst();
+	}
+
 	const bool sent = PlatformManager::get().updateCategory(category, title, manual);
 
 	// updateCategory() also returns false when the platform already is on that

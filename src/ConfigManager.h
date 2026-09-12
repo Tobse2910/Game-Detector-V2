@@ -94,6 +94,10 @@ public:
 	int getSmartContextGrace() const;
 	bool getSmartContextAnnounceChat() const;
 	QString getSmartContextAnnounceMessage() const;
+	QString getSmartContextBaseTitle() const;
+	void setSmartContextBaseTitle(const QString &value);
+	QString getSmartContextOwnTitle() const;
+	void setSmartContextOwnTitle(const QString &value);
 	obs_data_array_t *getSmartContextRules() const;
 	void saveSmartContextRules(obs_data_array_t *rulesArray);
 	static obs_data_array_t *createDefaultSmartContextRules();
@@ -116,6 +120,12 @@ public:
 	static constexpr const char *SMART_CONTEXT_RULES_KEY = "smart_context_rules";
 	static constexpr const char *SMART_CONTEXT_ANNOUNCE_KEY = "smart_context_announce_chat";
 	static constexpr const char *SMART_CONTEXT_ANNOUNCE_MESSAGE_KEY = "smart_context_announce_message";
+	// Der eigene Titel des Nutzers, ohne alles, was das Plugin davorgesetzt hat,
+	// und der Titel, den das Plugin zuletzt selbst gesetzt hat. Beide muessen einen
+	// OBS-Neustart ueberleben, sonst waere nach dem Start nicht mehr
+	// unterscheidbar, was vom Nutzer stammt und was vom Plugin.
+	static constexpr const char *SMART_CONTEXT_BASE_TITLE_KEY = "smart_context_base_title";
+	static constexpr const char *SMART_CONTEXT_OWN_TITLE_KEY = "smart_context_own_title";
 
 signals:
 	void settingsSaved();
