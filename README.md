@@ -14,7 +14,8 @@ der Wechsel passiert erst, wenn das eine Weile stabil so bleibt.
 
 ## ⬇️ Herunterladen
 
-**[Aktuelle Version herunterladen](https://github.com/Tobse2910/Game-Detector-V2/releases/latest)**
+**[Aktuelle Version herunterladen](https://github.com/Tobse2910/Game-Detector-V2/releases/latest/download/Game-Detector-V2-latest.zip)**
+(oder [alle Versionen ansehen](https://github.com/Tobse2910/Game-Detector-V2/releases/latest))
 
 1. ZIP herunterladen und entpacken
 2. OBS Studio komplett schließen
@@ -54,6 +55,22 @@ lesen live von Twitch, und jedes Ergebnis steht im OBS-Log.
 
 Manuelle Übersteuerung ist überall möglich: Kategorie setzen, jetzt wechseln, Timer
 zurücksetzen, Kategorie sperren.
+
+## 🔗 Auf einer eigenen Seite verlinken
+
+Dieser Link liefert dauerhaft die neueste Version und startet den Download direkt:
+
+```
+https://github.com/Tobse2910/Game-Detector-V2/releases/latest/download/Game-Detector-V2-latest.zip
+```
+
+An jedem Release hängt dieselbe Datei zweimal: einmal mit der Versionsnummer im Namen
+und einmal als `Game-Detector-V2-latest.zip`. Deshalb muss auf einer eigenen Seite nie
+eine Datei ausgetauscht werden. Ein selbst abgelegtes ZIP veraltet dagegen still mit dem
+nächsten Release, und neue Nutzer laden dann eine alte Version.
+
+Woher eine Installation kommt, ist für die Updates unerheblich: die Adresse für die
+Update-Suche steckt fest im Plugin.
 
 ## 📄 Mehr
 
