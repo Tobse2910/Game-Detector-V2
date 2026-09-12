@@ -41,3 +41,10 @@ cmake/.CMakeBuildNumber
 
 # Quellordner für Grafiken; die fertigen Bilder liegen in img/
 Bild/
+
+# Lokale Zugangsdaten. Dieses Repo ist oeffentlich, hier darf nie ein Passwort
+# landen: tools\publish-web.ps1 legt seine Angaben unter diesem Namen ab,
+# mit DPAPI verschluesselt, lesbar nur fuer diesen Benutzer auf diesem Rechner.
+*.local.xml
+*.local.json
+.netrc
