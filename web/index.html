@@ -1,371 +1,381 @@
-<title>Game Detector V2</title>
-<meta name="description" content="OBS-Plugin, das die Twitch-Kategorie nach dem Fenster wechselt, das du wirklich benutzt.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Game Detector V2 für OBS | IT-Kicodebyts</title>
+<meta name="description" content="OBS-Plugin, das erkennt welche Anwendung du wirklich benutzt und danach automatisch Twitch-Kategorie und Streamtitel setzt. Kostenlos, quelloffen, nur Windows.">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="canonical" href="https://it-kicodebyts.com/game-detector/">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@700;900&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="de_DE">
+<meta property="og:site_name" content="IT-Kicodebyts">
+<meta property="og:url" content="https://it-kicodebyts.com/game-detector/">
+<meta property="og:title" content="Game Detector V2 für OBS | IT-Kicodebyts">
+<meta property="og:description" content="Die Twitch-Kategorie folgt dem Fenster, in dem du arbeitest. Kostenloses OBS-Plugin, quelloffen unter GPL-2.0.">
+
+<!-- Dieselben Stylesheets wie die Startseite: die Seite erbt Palette, Schriften und
+     Bausteine, statt sie nachzubauen. -->
+<link rel="preload" href="../assets/fonts/hanken-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../assets/css/fonts.css?v=20260618">
+<link rel="stylesheet" href="../assets/css/styles.css?v=20260804-preise">
 
 <style>
-  /* Bewusst einfarbig dunkel: die Seite sitzt in einer dunklen Marke (#0a0a0a mit
-     warmem Orange). Alle Farben werden explizit gesetzt, damit sie auf jedem
-     Untergrund haelt. */
-  :root {
-    --grund: #0a0a0a;
-    --flaeche: #141210;
-    --flaeche-hoch: #1c1917;
-    --kante: #2a2622;
-    --text: #f3f0ea;
-    --text-leise: #938a7c;
-    --akzent: #e07a35;
-    --akzent-dunkel: #b85f24;
-    --gut: #5f9e5f;
-
-    --mass: 1.5rem;
-    color-scheme: dark;
-  }
-
-  *, *::before, *::after { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    padding-inline: var(--mass);
-    padding-block: 0;
-    background: var(--grund);
-    color: var(--text);
-    font-family: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
-    font-size: 1.0625rem;
-    line-height: 1.65;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  .huelle { max-width: 62rem; margin-inline: auto; }
-
-  h1, h2, h3 {
-    font-family: Chivo, "Source Sans 3", system-ui, sans-serif;
-    font-weight: 900;
+  /* Nur was das Stylesheet der Startseite nicht hat. Alle Werte kommen aus seinen
+     Tokens, damit die Seite bei einer Designänderung mitgeht. */
+  .plugin-hero { padding-block: clamp(3rem, 9vw, 6rem) 0; }
+  .plugin-hero .hero-title {
+    font-size: clamp(2.1rem, 5.5vw, 3.6rem);
+    line-height: 1.05;
     letter-spacing: -0.02em;
+    margin: 0.6rem 0 0;
     text-wrap: balance;
-    margin: 0;
+  }
+  .plugin-hero .hero-lede {
+    color: var(--ink-soft);
+    font-size: clamp(1.02rem, 1.6vw, 1.18rem);
+    max-width: 48ch;
+    margin: 1.25rem 0 0;
+    line-height: 1.65;
+  }
+  .plugin-hero .hero-lede strong { color: var(--ink); font-weight: 600; }
+
+  .plugin-actions {
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 0.9rem 1.4rem; margin-top: 2rem;
+  }
+  .plugin-actions .meta { color: var(--ink-mute); font-size: 0.9rem; }
+  .plugin-actions .meta .nr { color: var(--ink-soft); font-family: var(--f-mono); }
+  .plugin-link {
+    color: var(--ink-soft); text-decoration: none;
+    border-bottom: 1px solid var(--line-strong); padding-bottom: 2px;
+  }
+  .plugin-link:hover, .plugin-link:focus-visible { color: var(--ink); border-bottom-color: var(--accent); }
+
+  /* Regeln: Programm links, Kategorie rechts. Das ist der Kern des Plugins, deshalb
+     steht es weit oben und nicht als Aufzählung unter Sonstiges. */
+  .regel-tafel {
+    margin-top: 2.25rem;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--bg-card);
+  }
+  .regel-zeile {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) 1.5rem minmax(0, 1fr);
+    align-items: center; gap: 0.4rem 1rem;
+    padding: 0.85rem 1.15rem;
+    border-top: 1px solid var(--line);
+  }
+  .regel-zeile:first-child { border-top: 0; }
+  .regel-kopf {
+    background: var(--bg-soft);
+    font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-mute); font-weight: 600;
+  }
+  .regel-prozess { font-family: var(--f-mono); font-size: 0.845rem; color: var(--ink-soft); overflow-wrap: anywhere; }
+  .regel-pfeil { color: var(--accent); font-family: var(--f-mono); text-align: center; }
+  .regel-ziel { font-weight: 600; color: var(--ink); }
+  .regel-zeile.neutral .regel-ziel,
+  .regel-zeile.neutral .regel-prozess { color: var(--ink-faint); }
+  .regel-zeile.neutral .regel-pfeil { color: var(--ink-faint); }
+
+  .plugin-hinweis {
+    margin-top: 1.4rem; color: var(--ink-mute);
+    font-size: 0.93rem; max-width: 68ch; line-height: 1.6;
   }
 
-  h1 { font-size: clamp(2.25rem, 6vw, 3.75rem); line-height: 1.02; }
-  h2 { font-size: clamp(1.35rem, 3vw, 1.75rem); line-height: 1.15; }
-  h3 { font-size: 1.0625rem; font-weight: 700; letter-spacing: 0; }
-
-  p { margin: 0; max-width: 62ch; }
-
-  code, .mono {
-    font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-    font-size: 0.9em;
+  /* Installation: eine echte Reihenfolge, deshalb numeriert. */
+  .schritt-liste { list-style: none; margin: 2.25rem 0 0; padding: 0; display: grid; gap: 0.85rem; }
+  .schritt-liste li {
+    display: grid; grid-template-columns: 2.2rem 1fr; gap: 1rem;
+    padding: 1rem 1.15rem;
+    background: var(--bg-card); border: 1px solid var(--line); border-radius: 14px;
   }
+  .schritt-nr { font-family: var(--f-mono); color: var(--accent); font-weight: 600; }
+  .schritt-liste b { color: var(--ink); font-weight: 600; }
+  .schritt-liste span { display: block; margin-top: 0.25rem; color: var(--ink-mute); font-size: 0.91rem; line-height: 1.6; }
 
-  .marke {
-    display: flex; align-items: center; gap: 0.6rem;
-    padding-block: 2.25rem 0;
-    font-family: Chivo, sans-serif; font-weight: 700;
-    font-size: 0.8125rem; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--text-leise);
+  .fakten-liste { margin: 2rem 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1.4rem 2.5rem; }
+  .fakten-liste div { display: grid; gap: 0.25rem; align-content: start; }
+  .fakten-liste dt { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; }
+  .fakten-liste dd { margin: 0; color: var(--ink); font-weight: 600; }
+  .fakten-liste dd em { display: block; font-style: normal; font-weight: 400; color: var(--ink-mute); font-size: 0.82rem; font-family: var(--f-mono); }
+
+  .plugin-fuss {
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+    padding-block: 2rem 3rem;
+    border-top: 1px solid var(--line);
+    color: var(--ink-mute); font-size: 0.9rem; line-height: 1.65;
+    display: grid; gap: 0.9rem;
   }
-  .marke::before {
-    content: ""; width: 0.6rem; height: 0.6rem; flex: none;
-    background: var(--akzent);
-  }
-
-  /* --- Kopf ------------------------------------------------------------- */
-  .kopf { display: flex; flex-direction: column; gap: 1.75rem; padding-block: 2.5rem 3.5rem; }
-
-  .einstieg { color: var(--text-leise); font-size: 1.1875rem; max-width: 52ch; }
-  .einstieg strong { color: var(--text); font-weight: 600; }
-
-  .aktionen { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.25rem; }
-
-  .laden {
-    display: inline-flex; align-items: baseline; gap: 0.7rem;
-    padding: 0.95rem 1.6rem;
-    background: var(--akzent); color: #140c05;
-    font-family: Chivo, sans-serif; font-weight: 700; font-size: 1.0625rem;
-    text-decoration: none;
-    transition: background 140ms ease, transform 140ms ease;
-  }
-  .laden:hover, .laden:focus-visible { background: #f08b45; transform: translateY(-1px); }
-  .laden .groesse { font-family: "IBM Plex Mono", monospace; font-size: 0.8125rem; font-weight: 400; opacity: 0.72; }
-
-  .nebenlink { color: var(--text-leise); text-decoration: none; border-bottom: 1px solid var(--kante); }
-  .nebenlink:hover, .nebenlink:focus-visible { color: var(--text); border-bottom-color: var(--akzent); }
-
-  .stand { color: var(--text-leise); font-size: 0.875rem; }
-  .stand .nr { color: var(--text); }
-
-  /* --- Regeln: das Herz des Plugins ------------------------------------- */
-  .regeln { border-top: 1px solid var(--kante); padding-block: 3rem; }
-  .regeln h2 + p { margin-top: 0.85rem; color: var(--text-leise); }
-
-  .tabelle { margin-top: 2rem; display: grid; gap: 1px; background: var(--kante); }
-  .zeile {
-    display: grid; grid-template-columns: minmax(0, 1.1fr) auto minmax(0, 1fr);
-    align-items: center; gap: 0.75rem 1.25rem;
-    padding: 0.9rem 1.1rem; background: var(--flaeche);
-  }
-  .zeile.kopfzeile {
-    background: var(--grund);
-    font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--text-leise); font-weight: 600;
-  }
-  .prozess { font-family: "IBM Plex Mono", monospace; font-size: 0.875rem; color: var(--text); overflow-wrap: anywhere; }
-  .pfeil { color: var(--akzent); font-family: "IBM Plex Mono", monospace; }
-  .kategorie { font-weight: 600; }
-  .zeile.aus .kategorie, .zeile.aus .prozess { color: var(--text-leise); }
-  .zeile.aus .pfeil { color: var(--kante); }
-
-  .nachtrag { margin-top: 1.25rem; color: var(--text-leise); font-size: 0.9375rem; }
-
-  /* --- Was es tut ------------------------------------------------------- */
-  .punkte { border-top: 1px solid var(--kante); padding-block: 3rem; display: grid; gap: 2rem; }
-  .punkte-gitter { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1.75rem 2.5rem; }
-  .punkt { display: grid; gap: 0.5rem; align-content: start; }
-  .punkt h3 { color: var(--text); }
-  .punkt p { color: var(--text-leise); font-size: 0.9375rem; }
-
-  /* --- Installation ----------------------------------------------------- */
-  .einbau { border-top: 1px solid var(--kante); padding-block: 3rem; }
-  .schritte { margin: 2rem 0 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 1px; background: var(--kante); }
-  .schritte li {
-    counter-increment: s;
-    display: grid; grid-template-columns: 2.5rem 1fr; gap: 1.1rem;
-    padding: 1.1rem 1.1rem; background: var(--flaeche);
-  }
-  .schritte li::before {
-    content: counter(s);
-    font-family: Chivo, sans-serif; font-weight: 900; font-size: 1.25rem;
-    color: var(--akzent); line-height: 1.3;
-  }
-  .schritte strong { font-weight: 600; }
-  .schritte .dazu { display: block; margin-top: 0.2rem; color: var(--text-leise); font-size: 0.9375rem; }
-
-  .hinweis {
-    margin-top: 1.75rem; padding: 1.1rem 1.25rem;
-    background: var(--flaeche-hoch); border-left: 3px solid var(--akzent);
-    color: var(--text-leise); font-size: 0.9375rem;
-  }
-  .hinweis strong { color: var(--text); font-weight: 600; }
-
-  /* --- Voraussetzungen -------------------------------------------------- */
-  .fakten { border-top: 1px solid var(--kante); padding-block: 3rem; }
-  .fakten dl { margin: 1.75rem 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1.5rem 2.5rem; }
-  .fakten div { display: grid; gap: 0.3rem; align-content: start; }
-  .fakten dt { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-leise); font-weight: 600; }
-  .fakten dd { margin: 0; font-weight: 600; }
-  .fakten dd .mono { font-weight: 400; color: var(--text-leise); display: block; font-size: 0.8125rem; }
-
-  /* --- Fuss ------------------------------------------------------------- */
-  footer { border-top: 1px solid var(--kante); padding-block: 2.5rem 3.5rem; color: var(--text-leise); font-size: 0.9375rem; display: grid; gap: 1rem; }
-  footer a { color: var(--text-leise); text-decoration: underline; text-decoration-color: var(--kante); text-underline-offset: 3px; }
-  footer a:hover, footer a:focus-visible { color: var(--akzent); text-decoration-color: var(--akzent); }
-  footer p { max-width: 70ch; }
-
-  :focus-visible { outline: 2px solid var(--akzent); outline-offset: 3px; }
-
-  @media (prefers-reduced-motion: reduce) {
-    * { animation: none !important; transition: none !important; }
-  }
+  .plugin-fuss a { color: var(--ink-soft); }
+  .plugin-fuss a:hover, .plugin-fuss a:focus-visible { color: var(--accent); }
+  .plugin-fuss p { max-width: 74ch; margin: 0; }
 
   @media (max-width: 34rem) {
-    .zeile { grid-template-columns: 1fr; gap: 0.35rem; }
-    .zeile.kopfzeile { display: none; }
-    .pfeil { display: none; }
-    .kategorie::before { content: "→ "; color: var(--akzent); }
+    .regel-zeile { grid-template-columns: 1fr; }
+    .regel-kopf { display: none; }
+    .regel-pfeil { display: none; }
+    .regel-ziel::before { content: "→ "; color: var(--accent); }
   }
 </style>
 
-<div class="huelle">
-  <div class="marke">kicodebyts</div>
+<nav class="nav">
+  <a href="../" class="brand" aria-label="Zur Startseite">
+    <span class="brand-mark">
+      <img src="../bilder/it-kicodebyts-mark.png" alt="IT-Kicodebyts Logo" width="30" height="30" />
+    </span>
+    <span class="brand-text">IT-Kicodebyts</span>
+  </a>
 
-  <header class="kopf">
-    <h1>Die Kategorie folgt dem Fenster, in dem du arbeitest</h1>
+  <ul class="nav-list">
+    <li><a href="../#leistungen">Leistungen</a></li>
+    <li><a href="../#schulungen">Schulungen</a></li>
+    <li><a href="../#preise">Preise</a></li>
+    <li><a href="../#betreuung">Betreuung</a></li>
+    <li><a href="../#ablauf">Ablauf</a></li>
+    <li><a href="../#werkzeug">Werkzeug</a></li>
+    <li><a href="../#faq">FAQ</a></li>
+  </ul>
 
-    <p class="einstieg">
-      Ein OBS-Plugin für Twitch. Es fragt nicht, ob irgendwo ein Spiel läuft, sondern
-      <strong>welches Fenster gerade vorne ist</strong>, und setzt Kategorie und
-      Streamtitel erst, wenn das eine Weile stabil so bleibt.
-    </p>
+  <div class="nav-aside">
+    <a href="../#kontakt" class="nav-cta">
+      Anfragen
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+</nav>
 
-    <div class="aktionen">
-      <a class="laden" href="https://github.com/Tobse2910/Game-Detector-V2/releases/latest/download/Game-Detector-V2-latest.zip">
-        Herunterladen <span class="groesse">ZIP · 261 KB</span>
-      </a>
-      <a class="nebenlink" href="https://github.com/Tobse2910/Game-Detector-V2/releases/latest">Alle Versionen</a>
-      <a class="nebenlink" href="https://github.com/Tobse2910/Game-Detector-V2">Quellcode</a>
-    </div>
+<main>
+  <section class="section plugin-hero" id="top">
+    <div class="container">
+      <span class="eyebrow">Kostenloses Werkzeug</span>
+      <h1 class="hero-title">Die Twitch-Kategorie folgt dem Fenster,<br>in dem du arbeitest</h1>
 
-    <p class="stand">
-      Aktuell <span class="nr mono" id="version">1.3.6</span> · Der Link liefert immer
-      die neueste Version, spätere Updates macht das Plugin selbst.
-    </p>
-  </header>
+      <p class="hero-lede">
+        Ein Plugin für OBS Studio. Es fragt nicht, ob irgendwo ein Spiel läuft, sondern
+        <strong>welches Fenster gerade vorne ist</strong>, und setzt Kategorie und
+        Streamtitel erst, wenn das eine Weile stabil so bleibt.
+      </p>
 
-  <section class="regeln">
-    <h2>Du hinterlegst, was zu welcher Kategorie gehört</h2>
-    <p>
-      Programmnamen mit <code>*</code> und <code>?</code> als Platzhalter, dazu optional
-      ein Streamtitel, eine eigene Verzögerung und eine Priorität. Diese Regeln sind
-      mitgeliefert und jederzeit änderbar.
-    </p>
+      <div class="plugin-actions">
+        <a class="btn btn-primary btn-lg"
+           href="https://github.com/Tobse2910/Game-Detector-V2/releases/latest/download/Game-Detector-V2-latest.zip">
+          Herunterladen
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 21h16"/>
+          </svg>
+        </a>
+        <a class="plugin-link" href="https://github.com/Tobse2910/Game-Detector-V2/releases/latest">Alle Versionen</a>
+        <a class="plugin-link" href="https://github.com/Tobse2910/Game-Detector-V2">Quellcode</a>
+      </div>
 
-    <div class="tabelle">
-      <div class="zeile kopfzeile">
-        <span>Programm im Vordergrund</span><span></span><span>Twitch-Kategorie</span>
-      </div>
-      <div class="zeile">
-        <span class="prozess">WardogsClient-Win64-Shipping.exe</span>
-        <span class="pfeil" aria-hidden="true">→</span>
-        <span class="kategorie">WARDOGS</span>
-      </div>
-      <div class="zeile">
-        <span class="prozess">FiveM.exe</span>
-        <span class="pfeil" aria-hidden="true">→</span>
-        <span class="kategorie">Grand Theft Auto V</span>
-      </div>
-      <div class="zeile">
-        <span class="prozess">Code.exe, devenv.exe, idea64.exe</span>
-        <span class="pfeil" aria-hidden="true">→</span>
-        <span class="kategorie">Software and Game Development</span>
-      </div>
-      <div class="zeile">
-        <span class="prozess">firefox.exe, chrome.exe, msedge.exe</span>
-        <span class="pfeil" aria-hidden="true">→</span>
-        <span class="kategorie">Just Chatting</span>
-      </div>
-      <div class="zeile aus">
-        <span class="prozess">discord.exe, obs64.exe, explorer.exe, Spotify.exe</span>
-        <span class="pfeil" aria-hidden="true">→</span>
-        <span class="kategorie">ignoriert, Kategorie bleibt</span>
-      </div>
-    </div>
-
-    <p class="nachtrag">
-      Ignorierte Programme sind vollständig neutral: Du kannst stundenlang in Discord
-      sein, ohne dass sich etwas ändert, und ein laufender Countdown wird dabei weder
-      fortgesetzt noch zurückgesetzt.
-    </p>
-  </section>
-
-  <section class="punkte">
-    <h2>Was dabei sonst noch passiert</h2>
-
-    <div class="punkte-gitter">
-      <div class="punkt">
-        <h3>Kein Hin und Her</h3>
-        <p>
-          Gewechselt wird erst, wenn eine Anwendung die eingestellte Zeit lang vorne war,
-          standardmäßig fünf Minuten. Danach 60 Sekunden Ruhe, und ein kurzes Alt-Tab
-          unter einer Minute wirft den Zähler nicht weg.
-        </p>
-      </div>
-      <div class="punkt">
-        <h3>Titel und Tags gleich mit</h3>
-        <p>
-          Titel, Kategorie mit Titelbild, Tags, Stream-Sprache und Inhaltskennzeichnung
-          setzt du direkt im Dock. Das Streaminformation-Fenster von OBS brauchst du
-          dafür nicht mehr.
-        </p>
-      </div>
-      <div class="punkt">
-        <h3>Updates mit einem Klick</h3>
-        <p>
-          Gibt es eine neuere Version, steht ein Hinweis im Dock. Ein Klick lädt sie,
-          beendet OBS, tauscht das Plugin und startet OBS wieder. Geht etwas schief,
-          kommt die vorherige Version zurück.
-        </p>
-      </div>
-      <div class="punkt">
-        <h3>Jederzeit übersteuerbar</h3>
-        <p>
-          Kategorie von Hand setzen, sofort wechseln, Timer zurücksetzen oder die
-          Kategorie sperren, dann findet überhaupt kein automatischer Wechsel statt.
-        </p>
-      </div>
+      <p class="plugin-actions meta">
+        Aktuell <span class="nr" id="version">1.3.6</span> · ZIP, rund 260 KB · Der Link
+        liefert immer die neueste Version, spätere Updates macht das Plugin selbst.
+      </p>
     </div>
   </section>
 
-  <section class="einbau">
-    <h2>Installation</h2>
+  <section class="section" id="regeln">
+    <div class="container">
+      <header class="section-head">
+        <span class="eyebrow">So funktioniert es</span>
+        <h2 class="section-title">Du hinterlegst,<br>was zu welcher Kategorie gehört.</h2>
+        <p class="section-lede">
+          Programmnamen mit <code>*</code> und <code>?</code> als Platzhalter, dazu
+          optional ein Streamtitel, eine eigene Verzögerung und eine Priorität. Diese
+          Regeln sind mitgeliefert und jederzeit änderbar.
+        </p>
+      </header>
 
-    <ol class="schritte">
-      <li>
-        <div><strong>ZIP herunterladen und entpacken</strong>
-          <span class="dazu">In der Wurzel liegen vier Dinge. Anzuklicken ist nur die eine Datei aus Schritt 3.</span>
+      <div class="regel-tafel">
+        <div class="regel-zeile regel-kopf">
+          <span>Programm im Vordergrund</span><span></span><span>Twitch-Kategorie</span>
         </div>
-      </li>
-      <li>
-        <div><strong>OBS Studio komplett schließen</strong>
-          <span class="dazu">Solange OBS läuft, ist die Plugin-Datei gesperrt. Der Installer prüft das und sagt es dir.</span>
+        <div class="regel-zeile">
+          <span class="regel-prozess">WardogsClient-Win64-Shipping.exe</span>
+          <span class="regel-pfeil" aria-hidden="true">→</span>
+          <span class="regel-ziel">WARDOGS</span>
         </div>
-      </li>
-      <li>
-        <div><strong><code>Installieren.bat</code> doppelklicken</strong>
-          <span class="dazu">Holt sich selbst Administratorrechte, Windows-Abfrage mit Ja bestätigen. Das Plugin muss in den OBS-Programmordner.</span>
+        <div class="regel-zeile">
+          <span class="regel-prozess">FiveM.exe</span>
+          <span class="regel-pfeil" aria-hidden="true">→</span>
+          <span class="regel-ziel">Grand Theft Auto V</span>
         </div>
-      </li>
-      <li>
-        <div><strong>OBS starten, Menü Docks, Haken bei Game Detector</strong>
-          <span class="dazu">Neue Docks sind in OBS immer erst versteckt.</span>
+        <div class="regel-zeile">
+          <span class="regel-prozess">Code.exe, devenv.exe, idea64.exe</span>
+          <span class="regel-pfeil" aria-hidden="true">→</span>
+          <span class="regel-ziel">Software and Game Development</span>
         </div>
-      </li>
-      <li>
-        <div><strong>Im Dock auf das Bildschirm-Symbol, dann Twitch verbinden</strong>
-          <span class="dazu">Plattform-Aktion auf „Kategorie über API“ stellen, Haken bei „Gemeinsame Berechtigungen“, dann autorisieren. Danach im Dock „Smart Context Mode“ anhaken.</span>
+        <div class="regel-zeile">
+          <span class="regel-prozess">firefox.exe, chrome.exe, msedge.exe</span>
+          <span class="regel-pfeil" aria-hidden="true">→</span>
+          <span class="regel-ziel">Just Chatting</span>
         </div>
-      </li>
-    </ol>
+        <div class="regel-zeile neutral">
+          <span class="regel-prozess">discord.exe, obs64.exe, explorer.exe, Spotify.exe</span>
+          <span class="regel-pfeil" aria-hidden="true">→</span>
+          <span class="regel-ziel">ignoriert, Kategorie bleibt</span>
+        </div>
+      </div>
 
-    <p class="hinweis">
-      <strong>Zum Entfernen</strong> liegt <code>Deinstallieren.bat</code> daneben. Deine
-      Regeln und die Twitch-Verbindung bleiben dabei erhalten, falls du später wieder
-      installierst.
-    </p>
+      <p class="plugin-hinweis">
+        Ignorierte Programme sind vollständig neutral: Du kannst stundenlang in Discord
+        sein, ohne dass sich etwas ändert, und ein laufender Countdown wird dabei weder
+        fortgesetzt noch zurückgesetzt.
+      </p>
+    </div>
   </section>
 
-  <section class="fakten">
-    <h2>Voraussetzungen</h2>
-    <dl>
-      <div>
-        <dt>Betriebssystem</dt>
-        <dd>Nur Windows<span class="mono">Vordergrunderkennung über Windows-APIs</span></dd>
+  <section class="section" id="funktionen">
+    <div class="container">
+      <header class="section-head">
+        <span class="eyebrow">Was sonst noch drin ist</span>
+        <h2 class="section-title">Gebaut für den laufenden Stream.</h2>
+      </header>
+
+      <div class="toolkit-grid">
+        <article class="tool-card">
+          <span class="tool-card-num">01</span>
+          <h3 class="tool-card-title">Kein Hin und Her</h3>
+          <p class="tool-card-text">
+            Gewechselt wird erst, wenn eine Anwendung die eingestellte Zeit lang vorne
+            war, standardmäßig fünf Minuten. Danach 60 Sekunden Ruhe, und ein kurzes
+            Alt-Tab unter einer Minute wirft den Zähler nicht weg.
+          </p>
+        </article>
+
+        <article class="tool-card">
+          <span class="tool-card-num">02</span>
+          <h3 class="tool-card-title">Titel und Tags gleich mit</h3>
+          <p class="tool-card-text">
+            Titel, Kategorie mit Titelbild, Tags, Stream-Sprache und
+            Inhaltskennzeichnung setzt du direkt im Dock. Das
+            Streaminformation-Fenster von OBS brauchst du dafür nicht mehr.
+          </p>
+        </article>
+
+        <article class="tool-card">
+          <span class="tool-card-num">03</span>
+          <h3 class="tool-card-title">Updates mit einem Klick</h3>
+          <p class="tool-card-text">
+            Ist eine neuere Version da, steht ein Hinweis im Dock. Ein Klick lädt sie,
+            beendet OBS, tauscht das Plugin aus und startet OBS wieder. Geht etwas
+            schief, kommt die vorherige Version zurück.
+          </p>
+        </article>
+
+        <article class="tool-card">
+          <span class="tool-card-num">04</span>
+          <h3 class="tool-card-title">Jederzeit übersteuerbar</h3>
+          <p class="tool-card-text">
+            Kategorie von Hand setzen, sofort wechseln, Timer zurücksetzen oder die
+            Kategorie sperren, dann findet überhaupt kein automatischer Wechsel statt.
+          </p>
+        </article>
       </div>
-      <div>
-        <dt>OBS Studio</dt>
-        <dd>28 oder neuer<span class="mono">getestet auf 32.2.1</span></dd>
-      </div>
-      <div>
-        <dt>Plattform</dt>
-        <dd>Twitch<span class="mono">Trovo aus dem Original enthalten</span></dd>
-      </div>
-      <div>
-        <dt>Berechtigung</dt>
-        <dd>channel:manage:broadcast<span class="mono">Kategorie, Titel und Tags setzen</span></dd>
-      </div>
-    </dl>
+    </div>
   </section>
 
-  <footer>
-    <p>
-      Ursprüngliches Plugin von <strong>Fábio F. Magalhães (FabioZumbi12)</strong>,
-      <a href="https://github.com/FabioZumbi12/game-detector">github.com/FabioZumbi12/game-detector</a>.
-      Smart Context Mode und alles Weitere von Tobias Schlothane.
-    </p>
-    <p>
-      Lizenziert unter der GNU General Public License v2.0, wie das Original. Der
-      vollständige Quelltext liegt unter
-      <a href="https://github.com/Tobse2910/Game-Detector-V2">github.com/Tobse2910/Game-Detector-V2</a>
-      und muss bei einer Weitergabe mitgegeben werden.
-    </p>
-  </footer>
-</div>
+  <section class="section" id="installation">
+    <div class="container">
+      <header class="section-head">
+        <span class="eyebrow">Einrichtung</span>
+        <h2 class="section-title">In fünf Schritten fertig.</h2>
+      </header>
+
+      <ol class="schritt-liste">
+        <li>
+          <span class="schritt-nr">01</span>
+          <div><b>ZIP herunterladen und entpacken</b>
+            <span>In der Wurzel liegen vier Dinge. Anzuklicken ist nur die eine Datei aus Schritt 3.</span>
+          </div>
+        </li>
+        <li>
+          <span class="schritt-nr">02</span>
+          <div><b>OBS Studio komplett schließen</b>
+            <span>Solange OBS läuft, ist die Plugin-Datei gesperrt. Der Installer prüft das und sagt es dir.</span>
+          </div>
+        </li>
+        <li>
+          <span class="schritt-nr">03</span>
+          <div><b><code>Installieren.bat</code> doppelklicken</b>
+            <span>Holt sich selbst Administratorrechte, Windows-Abfrage mit Ja bestätigen. Das Plugin muss in den OBS-Programmordner.</span>
+          </div>
+        </li>
+        <li>
+          <span class="schritt-nr">04</span>
+          <div><b>OBS starten, Menü Docks, Haken bei Game Detector</b>
+            <span>Neue Docks sind in OBS immer erst versteckt.</span>
+          </div>
+        </li>
+        <li>
+          <span class="schritt-nr">05</span>
+          <div><b>Twitch verbinden und Smart Context einschalten</b>
+            <span>Im Dock auf das Bildschirm-Symbol: Plattform-Aktion auf „Kategorie über API“, Haken bei „Gemeinsame Berechtigungen“, dann autorisieren. Danach im Dock „Smart Context Mode“ anhaken.</span>
+          </div>
+        </li>
+      </ol>
+
+      <p class="plugin-hinweis">
+        Zum Entfernen liegt <code>Deinstallieren.bat</code> daneben. Deine Regeln und die
+        Twitch-Verbindung bleiben dabei erhalten, falls du später wieder installierst.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" id="voraussetzungen">
+    <div class="container">
+      <header class="section-head">
+        <span class="eyebrow">Voraussetzungen</span>
+        <h2 class="section-title">Was du brauchst.</h2>
+      </header>
+
+      <dl class="fakten-liste">
+        <div>
+          <dt>Betriebssystem</dt>
+          <dd>Nur Windows<em>Vordergrunderkennung über Windows-APIs</em></dd>
+        </div>
+        <div>
+          <dt>OBS Studio</dt>
+          <dd>28 oder neuer<em>getestet auf 32.2.1</em></dd>
+        </div>
+        <div>
+          <dt>Plattform</dt>
+          <dd>Twitch<em>Trovo aus dem Original enthalten</em></dd>
+        </div>
+        <div>
+          <dt>Berechtigung</dt>
+          <dd>channel:manage:broadcast<em>Kategorie, Titel und Tags setzen</em></dd>
+        </div>
+      </dl>
+
+      <div class="plugin-fuss">
+        <p>
+          Ursprüngliches Plugin von <strong>Fábio F. Magalhães (FabioZumbi12)</strong>,
+          <a href="https://github.com/FabioZumbi12/game-detector">github.com/FabioZumbi12/game-detector</a>.
+          Der Smart Context Mode und alles Weitere von Tobias Schlothane.
+        </p>
+        <p>
+          Lizenziert unter der GNU General Public License v2.0, wie das Original. Der
+          vollständige Quelltext liegt unter
+          <a href="https://github.com/Tobse2910/Game-Detector-V2">github.com/Tobse2910/Game-Detector-V2</a>
+          und muss bei einer Weitergabe mitgegeben werden.
+        </p>
+        <p>
+          <a href="../">Zur Startseite</a> ·
+          <a href="../datenschutz.html">Datenschutz</a> ·
+          <a href="../agb.html">AGB</a>
+        </p>
+      </div>
+    </div>
+  </section>
+</main>
 
 <script>
-  // Die Versionsnummer aktuell halten, ohne dass die Seite angefasst werden muss.
-  // Schlaegt der Abruf fehl, etwa weil die Seite in einer Umgebung ohne Zugriff auf
-  // die GitHub-API liegt, bleibt der eingetragene Stand stehen.
+  // Versionsnummer aktuell halten, ohne die Seite anzufassen. Schlaegt der Abruf
+  // fehl, bleibt der eingetragene Stand stehen.
   (async () => {
     const ziel = document.getElementById("version");
     if (!ziel) return;
