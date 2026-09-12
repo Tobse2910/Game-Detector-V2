@@ -438,7 +438,12 @@ void SmartContextManager::poll()
 		return;
 	}
 
-	currentContext = resolution.category;
+	// Kommt die Kategorie aus der festen Vorgabe und nicht aus einer Regel, steht
+	// das dabei. Sonst raetselt man, warum gerade diese Kategorie erkannt wurde.
+	currentContext = resolution.fromFallback
+				 ? QString("%1 (%2)").arg(resolution.category,
+							  obs_module_text("SmartContext.Status.FromFallback"))
+				 : resolution.category;
 	expireParkedEntries(POLL_INTERVAL_MS);
 
 	if (resolution.category.compare(currentAppliedCategory, Qt::CaseInsensitive) == 0) {

@@ -611,6 +611,15 @@ void GameDetectorDock::refreshManualCategoryCombo()
 	if (!seen.contains("Just Chatting", Qt::CaseInsensitive))
 		manualCategoryCombo->addItem("Just Chatting", QString());
 
+	// Die feste Kategorie gehoert hier auch hin: wer sie eingestellt hat, will sie
+	// von Hand setzen koennen, ohne dass eine Regel sie hergibt. Ihre Titelvorlage
+	// ist dieselbe wie im Automatikfall, also der eigene Titel des Nutzers.
+	const QString ausweich = ConfigManager::get().getSmartContextFallbackCategory().trimmed();
+	if (!ausweich.isEmpty() && !seen.contains(ausweich, Qt::CaseInsensitive)) {
+		seen << ausweich;
+		manualCategoryCombo->addItem(ausweich, QString("{titel}"));
+	}
+
 	if (!previous.isEmpty()) {
 		int index = manualCategoryCombo->findText(previous, Qt::MatchFixedString);
 		if (index >= 0)
@@ -690,6 +699,10 @@ void GameDetectorDock::onFallbackChanged()
 	ConfigManager::get().setSmartContextFallbackCategory(fallbackCategoryCombo->currentText().trimmed());
 	ConfigManager::get().save(ConfigManager::get().getSettings());
 	SmartContextManager::get().reloadSettings();
+
+	// Die feste Kategorie steht auch in der manuellen Auswahl, also muss die Liste
+	// nachgezogen werden, wenn sie sich aendert.
+	refreshManualCategoryCombo();
 }
 
 void GameDetectorDock::applySmartContextMode()
