@@ -78,7 +78,13 @@ private:
 
 	static constexpr const char *RELEASE_API_URL =
 		"https://api.github.com/repos/Tobse2910/Game-Detector-V2/releases/latest";
-	static constexpr qint64 CHECK_INTERVAL_SECONDS = 24 * 60 * 60;
+	// Nur eine Bremse gegen mehrere OBS-Starts in kurzer Folge, kein Tagesfenster:
+	// wer OBS startet, soll den Hinweis sehen und nicht erst nach einem Tag oder
+	// nachdem er in den Einstellungen von Hand gesucht hat.
+	static constexpr qint64 CHECK_INTERVAL_SECONDS = 15 * 60;
+
+	// Damit auch eine lange laufende OBS-Sitzung mitbekommt, dass es etwas Neues gibt.
+	static constexpr int WIEDERHOLUNG_MS = 6 * 60 * 60 * 1000;
 
 	// A download URL from the API ends up being handled by an elevated helper, so it
 	// is only accepted when it comes from this fork's own releases.
@@ -93,6 +99,7 @@ private:
 	QFutureWatcher<QStringList> *watcher = nullptr;
 	QFutureWatcher<QString> *downloadWatcher = nullptr;
 	QTimer *startupTimer = nullptr;
+	QTimer *wiederholungsTimer = nullptr;
 	DownloadAbortFlag downloadAbort;
 	bool shuttingDown = false;
 	bool updating = false;

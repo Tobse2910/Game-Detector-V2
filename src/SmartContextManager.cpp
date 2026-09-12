@@ -30,11 +30,35 @@
 
 namespace {
 
+/*
+ * Der Windows-Schreibtisch ist kein Programm im Vordergrund, sondern die
+ * Abwesenheit eines Programms. Er gehoert trotzdem zu explorer.exe, weshalb eine
+ * Ignorierregel fuer explorer.exe ihn mit erfasst und die feste Kategorie nie
+ * greifen konnte.
+ *
+ * Unterscheiden laesst sich das an der Fensterklasse, nachgemessen auf diesem
+ * Rechner: der Schreibtisch ist "Progman" oder "WorkerW", die Taskleiste
+ * "Shell_TrayWnd", ein Explorer-Dateifenster dagegen "CabinetWClass". Nur die
+ * ersten drei gelten hier als "nichts im Vordergrund"; wer in Ordnern blaettert,
+ * bleibt weiter ignoriert, denn das ist eine Taetigkeit.
+ */
+bool istSchreibtischFenster(const QString &exeName, const QString &fensterKlasse)
+{
+	if (exeName.compare("explorer.exe", Qt::CaseInsensitive) != 0)
+		return false;
+
+	static const QStringList schreibtisch = {"Progman", "WorkerW", "Shell_TrayWnd",
+						 "Shell_SecondaryTrayWnd"};
+	return schreibtisch.contains(fensterKlasse, Qt::CaseInsensitive);
+}
+
 // Reads the executable name and window title of the current foreground window.
-// The process id comes along because the FiveM server lookup needs it.
-bool getForegroundApp(QString &exeName, QString &windowTitle, quint32 &processId)
+// The process id comes along because the FiveM server lookup needs it, the
+// desktop flag because an ignore rule must not swallow the empty screen.
+bool getForegroundApp(QString &exeName, QString &windowTitle, quint32 &processId, bool &schreibtisch)
 {
 	processId = 0;
+	schreibtisch = false;
 #ifdef _WIN32
 	HWND hwnd = GetForegroundWindow();
 	if (!hwnd)
@@ -65,10 +89,17 @@ bool getForegroundApp(QString &exeName, QString &windowTitle, quint32 &processId
 	int titleLength = GetWindowTextW(hwnd, titleBuffer, 512);
 	windowTitle = titleLength > 0 ? QString::fromWCharArray(titleBuffer, titleLength) : QString();
 
+	wchar_t klasseBuffer[256] = {0};
+	const int klasseLaenge = GetClassNameW(hwnd, klasseBuffer, 256);
+	const QString fensterKlasse =
+		klasseLaenge > 0 ? QString::fromWCharArray(klasseBuffer, klasseLaenge) : QString();
+	schreibtisch = istSchreibtischFenster(exeName, fensterKlasse);
+
 	return !exeName.isEmpty();
 #else
 	Q_UNUSED(exeName);
 	Q_UNUSED(windowTitle);
+	Q_UNUSED(schreibtisch);
 	return false;
 #endif
 }
@@ -301,9 +332,28 @@ void SmartContextManager::stop()
 	emit statusUpdated();
 }
 
-SmartContextResolution SmartContextManager::resolve(const QString &exeName, const QString &windowTitle) const
+SmartContextResolution SmartContextManager::resolve(const QString &exeName, const QString &windowTitle,
+						   bool schreibtisch) const
 {
 	SmartContextResolution best;
+
+	/*
+	 * Der leere Schreibtisch faellt an den Regeln vorbei. Sonst wuerde ihn eine
+	 * Ignorierregel fuer explorer.exe verschlucken, und die feste Kategorie kaeme
+	 * nie zum Zug, obwohl gerade dann wirklich nichts laeuft. Ordnerfenster sind
+	 * davon nicht betroffen, die bleiben ein Programm wie jedes andere.
+	 */
+	if (schreibtisch) {
+		if (fallbackAktiv && !fallbackKategorie.isEmpty()) {
+			best.matched = true;
+			best.fromFallback = true;
+			best.category = fallbackKategorie;
+			best.titleTemplate = "{titel}";
+			best.ruleLabel = exeName;
+		}
+		return best;
+	}
+
 	int bestPriority = std::numeric_limits<int>::min();
 	bool bestExact = false;
 
@@ -405,8 +455,9 @@ void SmartContextManager::poll()
 	QString exeName;
 	QString windowTitle;
 	quint32 processId = 0;
+	bool schreibtisch = false;
 
-	if (!getForegroundApp(exeName, windowTitle, processId)) {
+	if (!getForegroundApp(exeName, windowTitle, processId, schreibtisch)) {
 		// No usable foreground window (lock screen, UAC prompt, …). Treat it as
 		// neutral rather than losing the accumulated time.
 		emit statusUpdated();
@@ -425,7 +476,8 @@ void SmartContextManager::poll()
 		     qUtf8Printable(windowTitle));
 	}
 
-	const SmartContextResolution resolution = resolve(exeName, windowTitle);
+	currentIstSchreibtisch = schreibtisch;
+	const SmartContextResolution resolution = resolve(exeName, windowTitle, schreibtisch);
 
 	currentIgnored = resolution.ignored || !resolution.matched;
 	currentRuleLabel = resolution.ruleLabel;

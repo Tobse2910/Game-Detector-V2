@@ -44,6 +44,10 @@ UpdateChecker::UpdateChecker()
 	startupTimer = new QTimer(this);
 	startupTimer->setSingleShot(true);
 	connect(startupTimer, &QTimer::timeout, this, [this]() { checkNow(false); });
+
+	wiederholungsTimer = new QTimer(this);
+	wiederholungsTimer->setInterval(WIEDERHOLUNG_MS);
+	connect(wiederholungsTimer, &QTimer::timeout, this, [this]() { checkNow(false); });
 }
 
 UpdateChecker::~UpdateChecker()
@@ -57,6 +61,8 @@ void UpdateChecker::shutdown()
 
 	if (startupTimer && startupTimer->isActive())
 		startupTimer->stop();
+	if (wiederholungsTimer && wiederholungsTimer->isActive())
+		wiederholungsTimer->stop();
 
 	if (watcher && watcher->isRunning()) {
 		watcher->cancel();
@@ -133,6 +139,7 @@ void UpdateChecker::start()
 
 	blog(LOG_INFO, "[GameDetector/UpdateChecker] Running version %s.", currentVersion().toStdString().c_str());
 	startupTimer->start(10000);
+	wiederholungsTimer->start();
 }
 
 void UpdateChecker::checkNow(bool force)

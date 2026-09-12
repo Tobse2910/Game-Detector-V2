@@ -60,6 +60,7 @@ public:
 	QString activeWindowTitle() const { return currentWindowTitle; }
 	// Bei FiveM der Name des Servers, sonst leer.
 	QString activeServerName() const { return currentServerName; }
+	bool activeIsDesktop() const { return currentIstSchreibtisch; }
 	QString detectedContext() const { return currentContext; }
 	bool contextIsIgnored() const { return currentIgnored; }
 	QString appliedCategory() const { return currentAppliedCategory; }
@@ -95,7 +96,8 @@ private slots:
 private:
 	explicit SmartContextManager(QObject *parent = nullptr);
 
-	SmartContextResolution resolve(const QString &exeName, const QString &windowTitle) const;
+	SmartContextResolution resolve(const QString &exeName, const QString &windowTitle,
+				       bool schreibtisch) const;
 	bool pushCategory(const QString &category, const QString &titleTemplate, bool manual);
 	void parkCandidate();
 	int unparkCandidate(const QString &category);
@@ -109,6 +111,8 @@ private:
 	QString currentProcess;
 	QString currentWindowTitle;
 	QString currentServerName;
+	// Liegt der leere Schreibtisch vorn und nicht ein Ordnerfenster?
+	bool currentIstSchreibtisch = false;
 	// Der eigene Titel des Nutzers und der, den das Plugin zuletzt gesetzt hat.
 	bool fallbackAktiv = false;
 	QString fallbackKategorie;

@@ -755,6 +755,8 @@ void GameDetectorDock::onSmartContextStatusUpdated()
 	QString appText = process.isEmpty() ? QString("-") : process;
 	if (!server.isEmpty())
 		appText += QString(" (%1)").arg(server);
+	else if (smart.activeIsDesktop())
+		appText += QString(" (%1)").arg(obs_module_text("SmartContext.Status.Desktop"));
 	smartAppValueLabel->setText(appText);
 
 	if (smart.contextIsIgnored()) {
