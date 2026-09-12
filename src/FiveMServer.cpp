@@ -37,9 +37,15 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 namespace {
 
-// Der Anfang des Logs reicht: die Ressourcenliste stand in allen beobachteten
-// Sitzungen zwischen 60 und 80 KB, das Dreifache ist reichlich Luft.
-constexpr qint64 LOG_AUSSCHNITT = 512 * 1024;
+// Beim ersten Lesen wird hoechstens so viel vom Ende des Logs geholt. Laeuft
+// FiveM schon lange, ist die Datei gross, interessant ist aber nur die letzte
+// Verbindung.
+constexpr qint64 ERSTES_LESEN_MAX = 8 * 1024 * 1024;
+
+// Danach wird nur gelesen, was neu hinzugekommen ist, mit dieser Ueberlappung,
+// damit eine Zeile nicht zwischen zwei Leseschritten zerfaellt. Die Zeile mit
+// den Ressourcen war in den beobachteten Sitzungen rund 3 KB lang.
+constexpr qint64 UEBERLAPPUNG = 16 * 1024;
 
 // So viele Ressourcen muessen uebereinstimmen, damit eine Angabendatei als der
 // aktuelle Server gilt. Bei echten Treffern lagen es 99 %; ein fremder Server
@@ -47,12 +53,15 @@ constexpr qint64 LOG_AUSSCHNITT = 512 * 1024;
 constexpr double MINDEST_ANTEIL = 0.6;
 constexpr int MINDEST_ANZAHL = 15;
 
-// Steht noch kein Name fest, wird erst nach dieser Pause erneut gelesen.
-constexpr qint64 ERNEUT_VERSUCHEN_MS = 10000;
+// Das Log wird hoechstens so oft angesehen. Die Abfrage laeuft jede Sekunde,
+// ein Serverwechsel dauert aber ohnehin laenger als das.
+constexpr qint64 LESEPAUSE_MS = 4000;
 
 struct Zwischenspeicher {
 	QString name;
 	QString logDatei;
+	QSet<QString> letzteRessourcen;
+	qint64 gelesenBis = 0;
 	qint64 versuchMs = 0;
 	quint32 pid = 0;
 	bool gueltig = false;
@@ -123,8 +132,13 @@ QString appOrdner(quint32 pid)
 
 // Die Ressourcen, die der Server beim Verbinden angefordert hat. Diese Zeile
 // schreibt FiveM bei jedem Verbindungsvorgang, sie ist damit der zuverlaessige
-// Teil: sie gehoert zur laufenden Sitzung.
-QSet<QString> ressourcenAusLog(const QString &logPfad)
+// Teil: sie gehoert zur laufenden Verbindung.
+//
+// Gelesen wird nur, was seit dem letzten Mal hinzugekommen ist, und genommen
+// wird das LETZTE Vorkommen. Wer im laufenden FiveM den Server wechselt,
+// bekommt eine zweite solche Zeile in dieselbe Datei; nur so wird der Wechsel
+// ueberhaupt bemerkt.
+QSet<QString> ressourcenAusLog(const QString &logPfad, qint64 &gelesenBis)
 {
 	QSet<QString> ergebnis;
 
@@ -132,18 +146,35 @@ QSet<QString> ressourcenAusLog(const QString &logPfad)
 	if (!datei.open(QIODevice::ReadOnly))
 		return ergebnis;
 
-	const QByteArray anfang = datei.read(LOG_AUSSCHNITT);
-	datei.close();
+	const qint64 groesse = datei.size();
 
-	const int start = anfang.indexOf("Required resources:");
+	qint64 von = 0;
+	if (gelesenBis > 0 && gelesenBis <= groesse) {
+		// Fortsetzen, aber ein Stueck zurueck, damit eine Zeile nicht zerfaellt.
+		von = qMax(qint64(0), gelesenBis - UEBERLAPPUNG);
+	} else if (groesse > ERSTES_LESEN_MAX) {
+		// Beim ersten Mal reicht das Ende: die letzte Verbindung zaehlt.
+		von = groesse - ERSTES_LESEN_MAX;
+	}
+
+	if (von > 0 && !datei.seek(von)) {
+		datei.close();
+		return ergebnis;
+	}
+
+	const QByteArray teilstueck = datei.readAll();
+	datei.close();
+	gelesenBis = groesse;
+
+	const int start = teilstueck.lastIndexOf("Required resources:");
 	if (start < 0)
 		return ergebnis;
 
-	int ende = anfang.indexOf('\n', start);
+	int ende = teilstueck.indexOf('\n', start);
 	if (ende < 0)
-		ende = anfang.size();
+		ende = teilstueck.size();
 
-	const QString zeile = QString::fromUtf8(anfang.mid(start, ende - start));
+	const QString zeile = QString::fromUtf8(teilstueck.mid(start, ende - start));
 	const QStringList teile =
 		zeile.mid(zeile.indexOf(':') + 1).split(' ', Qt::SkipEmptyParts);
 
@@ -247,8 +278,9 @@ QString currentName(const QString &exeName, quint32 pid)
 
 	const QString app = appOrdner(pid);
 	if (app.isEmpty()) {
-		if (!zwischen.gueltig) {
-			zwischen.gueltig = true;
+		static bool gemeldet = false;
+		if (!gemeldet) {
+			gemeldet = true;
 			blog(LOG_INFO, "[GameDetector/FiveM] FiveM folder not found, no server name.");
 		}
 		return QString();
@@ -258,45 +290,51 @@ QString currentName(const QString &exeName, quint32 pid)
 	if (!log.exists())
 		return QString();
 
-	// Diese Abfrage laeuft jede Sekunde, das Lesen darf also nicht jedes Mal
-	// passieren. Eine Sitzung schreibt in genau eine Logdatei, und der Server
-	// wechselt darin nicht mehr. Steht der Name also fest, bleibt er stehen.
-	// Nur wenn noch keiner gefunden wurde, wird es erneut versucht, und auch
-	// das nur alle paar Sekunden: FiveM kann offen sein, ohne verbunden zu sein.
-	const bool gleicheSitzung = zwischen.gueltig && zwischen.pid == pid &&
-				    zwischen.logDatei == log.fileName();
-
-	if (gleicheSitzung) {
-		if (!zwischen.name.isEmpty())
-			return zwischen.name;
-
-		const qint64 jetzt = QDateTime::currentMSecsSinceEpoch();
-		if (jetzt - zwischen.versuchMs < ERNEUT_VERSUCHEN_MS)
-			return QString();
-		zwischen.versuchMs = jetzt;
+	// Eine neue Sitzung schreibt in eine neue Datei, dann faengt das Lesen von
+	// vorn an.
+	if (!zwischen.gueltig || zwischen.pid != pid || zwischen.logDatei != log.fileName()) {
+		zwischen = Zwischenspeicher();
+		zwischen.logDatei = log.fileName();
+		zwischen.pid = pid;
+		zwischen.gueltig = true;
 	}
 
-	const QSet<QString> ressourcen = ressourcenAusLog(log.absoluteFilePath());
+	// Diese Abfrage laeuft jede Sekunde, gelesen wird aber nur alle paar
+	// Sekunden und nur, wenn das Log gewachsen ist.
+	const qint64 jetzt = QDateTime::currentMSecsSinceEpoch();
+	if (jetzt - zwischen.versuchMs < LESEPAUSE_MS)
+		return zwischen.name;
+	zwischen.versuchMs = jetzt;
 
-	QString name;
-	if (ressourcen.isEmpty()) {
-		// Launcher offen, aber noch nicht verbunden: dann gibt es keinen Server,
-		// und der Titel bleibt unangetastet.
-		if (!zwischen.name.isEmpty())
-			blog(LOG_INFO, "[GameDetector/FiveM] Not connected to a server.");
-	} else {
-		name = nameAusAngaben(app, ressourcen);
-		if (name.isEmpty() && zwischen.name.isEmpty())
-			blog(LOG_INFO,
-			     "[GameDetector/FiveM] Connected, but no stored details match these %d resources. "
-			     "Opening the server once in the FiveM server list stores its name.",
-			     ressourcen.size());
-	}
+	if (zwischen.gelesenBis > 0 && log.size() == zwischen.gelesenBis)
+		return zwischen.name;
 
+	const QSet<QString> ressourcen = ressourcenAusLog(log.absoluteFilePath(), zwischen.gelesenBis);
+
+	// Nichts Neues im Zuwachs: die bisherige Verbindung gilt weiter.
+	if (ressourcen.isEmpty())
+		return zwischen.name;
+
+	// Wegen der Ueberlappung taucht dieselbe Zeile eine Weile erneut auf. Dann
+	// muessen die gespeicherten Angaben nicht nochmal durchgesehen werden.
+	if (ressourcen == zwischen.letzteRessourcen)
+		return zwischen.name;
+	zwischen.letzteRessourcen = ressourcen;
+
+	const QString name = nameAusAngaben(app, ressourcen);
+
+	if (name.isEmpty() && zwischen.name.isEmpty())
+		blog(LOG_INFO,
+		     "[GameDetector/FiveM] Connected, but no stored details match these %d resources. "
+		     "Opening the server once in the FiveM server list stores its name.",
+		     ressourcen.size());
+	else if (!name.isEmpty() && name != zwischen.name && !zwischen.name.isEmpty())
+		blog(LOG_INFO, "[GameDetector/FiveM] Server changed: %s -> %s",
+		     qUtf8Printable(zwischen.name), qUtf8Printable(name));
+
+	// Ein leeres Ergebnis nach einem Wechsel auf einen unbekannten Server darf
+	// den alten Namen nicht stehen lassen, sonst steht ein falscher im Titel.
 	zwischen.name = name;
-	zwischen.logDatei = log.fileName();
-	zwischen.pid = pid;
-	zwischen.gueltig = true;
 	return name;
 }
 
