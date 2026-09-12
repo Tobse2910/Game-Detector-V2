@@ -687,7 +687,14 @@ obs_data_array_t *ConfigManager::createDefaultSmartContextRules()
 					      "discordptb.exe",
 					      "obs64.exe",
 					      "obs32.exe",
-					      "explorer.exe",
+					      // explorer.exe steht hier absichtlich NICHT mehr drin.
+					      // Der Windows-Schreibtisch ist kein Begleitprogramm wie
+					      // Discord, er ist die Abwesenheit eines Programms. Wer
+					      // minutenlang dort sitzt, spielt nicht, und genau dann
+					      // soll die feste Kategorie greifen koennen. Gegen einen
+					      // kurzen Blick dorthin schuetzt schon die Verzoegerung.
+					      // Ohne feste Kategorie aendert das nichts: ein Programm
+					      // ohne Regel ist ohnehin neutral.
 					      "*WaveLink*.exe", // Elgato.WaveLink.exe, WaveLink.exe, …
 					      "StreamDeck.exe",
 					      "Spotify.exe",
