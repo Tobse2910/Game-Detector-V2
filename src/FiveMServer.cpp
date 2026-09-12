@@ -18,6 +18,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #include "FiveMServer.h"
 
+#include <QDateTime>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -46,10 +47,13 @@ constexpr qint64 LOG_AUSSCHNITT = 512 * 1024;
 constexpr double MINDEST_ANTEIL = 0.6;
 constexpr int MINDEST_ANZAHL = 15;
 
+// Steht noch kein Name fest, wird erst nach dieser Pause erneut gelesen.
+constexpr qint64 ERNEUT_VERSUCHEN_MS = 10000;
+
 struct Zwischenspeicher {
 	QString name;
 	QString logDatei;
-	qint64 logGroesse = 0;
+	qint64 versuchMs = 0;
 	quint32 pid = 0;
 	bool gueltig = false;
 };
@@ -254,12 +258,23 @@ QString currentName(const QString &exeName, quint32 pid)
 	if (!log.exists())
 		return QString();
 
-	// Solange dieselbe Sitzung in dieselbe Datei schreibt und die Datei nicht
-	// gewachsen ist, bleibt das Ergebnis gleich. Das haelt den Aufwand klein,
-	// denn diese Abfrage laeuft jede Sekunde.
-	if (zwischen.gueltig && zwischen.pid == pid && zwischen.logDatei == log.fileName() &&
-	    zwischen.logGroesse == log.size())
-		return zwischen.name;
+	// Diese Abfrage laeuft jede Sekunde, das Lesen darf also nicht jedes Mal
+	// passieren. Eine Sitzung schreibt in genau eine Logdatei, und der Server
+	// wechselt darin nicht mehr. Steht der Name also fest, bleibt er stehen.
+	// Nur wenn noch keiner gefunden wurde, wird es erneut versucht, und auch
+	// das nur alle paar Sekunden: FiveM kann offen sein, ohne verbunden zu sein.
+	const bool gleicheSitzung = zwischen.gueltig && zwischen.pid == pid &&
+				    zwischen.logDatei == log.fileName();
+
+	if (gleicheSitzung) {
+		if (!zwischen.name.isEmpty())
+			return zwischen.name;
+
+		const qint64 jetzt = QDateTime::currentMSecsSinceEpoch();
+		if (jetzt - zwischen.versuchMs < ERNEUT_VERSUCHEN_MS)
+			return QString();
+		zwischen.versuchMs = jetzt;
+	}
 
 	const QSet<QString> ressourcen = ressourcenAusLog(log.absoluteFilePath());
 
@@ -280,7 +295,6 @@ QString currentName(const QString &exeName, quint32 pid)
 
 	zwischen.name = name;
 	zwischen.logDatei = log.fileName();
-	zwischen.logGroesse = log.size();
 	zwischen.pid = pid;
 	zwischen.gueltig = true;
 	return name;
