@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 3.28...3.30)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/common/bootstrap.cmake" NO_POLICY_SCOPE)
 
-project(GameDetector VERSION 1.3.6)
+project(GameDetector VERSION 1.4.0)
 
 option(ENABLE_FRONTEND_API "Use obs-frontend-api for UI functionality" ON)
 option(ENABLE_QT "Use Qt functionality" ON)
@@ -128,6 +128,7 @@ target_sources(
     "src/GameListDialog.cpp"
     "src/TwitchServiceAdapter.cpp"
     "src/SmartContextManager.cpp"
+    "src/FiveMServer.cpp"
     "src/SmartContextRulesDialog.cpp"
     "src/IgnoredAppsDialog.cpp"
     "src/UpdateChecker.cpp"

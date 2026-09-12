@@ -646,8 +646,14 @@ obs_data_array_t *ConfigManager::createDefaultSmartContextRules()
 	// Games. The wildcards matter: the shipped executables are rarely what you
 	// would guess (WardogsClient-Win64-Shipping.exe, FiveM_b3095_GTAProcess.exe).
 	pushRule(rules, makeRule("Wardogs*.exe", "WARDOGS", NO_TITLE, false, 50));
-	pushRule(rules, makeRule("FiveM.exe", "Grand Theft Auto V", NO_TITLE, false, 50));
-	pushRule(rules, makeRule("FiveM_*.exe", "Grand Theft Auto V", NO_TITLE, false, 50));
+	// Bei FiveM ist die Kategorie immer dieselbe, interessant ist der Server.
+	// {server} liest ihn aus den Angaben, die FiveM beim Verbinden ablegt, und
+	// steht am Anfang des Titels. Der eigene Text kommt dahinter, zum Beispiel
+	// "{server} | !music !wunsch". Ist kein Server bekannt, faellt der
+	// Platzhalter samt Trennzeichen weg.
+	static const char *const FIVEM_TITLE = "{server}";
+	pushRule(rules, makeRule("FiveM.exe", "Grand Theft Auto V", FIVEM_TITLE, false, 50));
+	pushRule(rules, makeRule("FiveM_*.exe", "Grand Theft Auto V", FIVEM_TITLE, false, 50));
 
 	// Development tools.
 	pushRule(rules, makeRule("Code.exe", CATEGORY_CODING, NO_TITLE, false, 40));

@@ -1,0 +1,355 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Downloads | IT-Kicodebyts</title>
+<meta name="description" content="Kostenlose Windows-Anwendungen von IT-Kicodebyts: Game Detector V2 für OBS und Call Klingel. Quelloffen, ohne Konto, ohne Cloud.">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="canonical" href="https://it-kicodebyts.com/downloads/">
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="de_DE">
+<meta property="og:site_name" content="IT-Kicodebyts">
+<meta property="og:url" content="https://it-kicodebyts.com/downloads/">
+<meta property="og:title" content="Downloads | IT-Kicodebyts">
+<meta property="og:description" content="Zwei kostenlose Windows-Anwendungen zum Herunterladen. Quelloffen, ohne Konto, ohne Cloud.">
+
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+
+<!-- Dieselben Stylesheets wie die Startseite: die Seite erbt Palette, Schriften und
+     Bausteine, statt sie nachzubauen. -->
+<link rel="preload" href="../assets/fonts/hanken-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../assets/css/fonts.css?v=20260618">
+<link rel="stylesheet" href="../assets/css/styles.css?v=20260912-nav2">
+
+<style>
+  /* Nur was das Stylesheet der Startseite nicht hat. Alle Werte kommen aus seinen
+     Tokens, damit die Seite bei einer Designaenderung mitgeht. */
+  .dl-seite { padding-block: clamp(6.5rem, 12vw, 9rem) clamp(3rem, 8vw, 6rem); }
+  .dl-seite .section-head { margin-bottom: clamp(2.5rem, 6vw, 4rem); }
+  .dl-seite .section-title { font-size: clamp(36px, 5.5vw, 68px); }
+
+  /* Auf 1440px waere eine einzelne Karte so breit, dass zwischen Text und
+     Knoepfen Leere steht. Die Lesebreite begrenzt das. */
+  .dl-liste { display: grid; gap: 22px; max-width: 1120px; }
+  .dl-hinweise { max-width: 68ch; }
+
+  /* Kartensprache der Startseite: Kartenfarbe, 24px Radius und der feine
+     Verlaufsrand oben links, wie beim Werkzeugkasten. */
+  .dl-karte {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 17rem);
+    gap: 28px;
+    align-items: start;
+    padding: clamp(24px, 3.5vw, 34px);
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    transition: border-color 0.5s var(--easing), background 0.5s var(--easing);
+  }
+  .dl-karte::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: var(--r-lg);
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(224, 122, 62, 0.25), transparent 50%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .dl-karte:hover { border-color: var(--line-strong); background: var(--bg-card-hi); }
+  .dl-karte > * { min-width: 0; }
+
+  .dl-kopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 14px; }
+  .dl-karte h2 {
+    font-family: var(--f-sans);
+    font-weight: 600;
+    font-size: clamp(21px, 2.4vw, 27px);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--ink);
+  }
+  .dl-kennung {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-mute);
+    padding: 5px 11px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .dl-karte p {
+    margin-top: 16px;
+    font-size: 15.5px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    max-width: 58ch;
+  }
+  .dl-karte p em { color: var(--ink-mute); font-style: normal; }
+
+  /* Daten zur Datei: Zahlen in der Mono-Schrift, damit sie als Angaben lesbar
+     sind und nicht als Fliesstext. */
+  .dl-daten {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  .dl-daten div { display: flex; flex-direction: column; gap: 3px; }
+  .dl-daten dt {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-faint);
+  }
+  .dl-daten dd {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dl-knoepfe { display: grid; gap: 10px; }
+  .dl-knoepfe .btn { width: 100%; justify-content: center; }
+  .dl-zweit {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 18px;
+    border: 1px solid var(--line-strong);
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    transition: border-color 0.35s var(--easing), color 0.35s var(--easing), background 0.35s var(--easing);
+  }
+  .dl-zweit:hover { border-color: var(--accent); color: var(--ink); background: rgba(224, 122, 62, 0.08); }
+  .dl-zweit .gr {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dl-hinweise {
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+    display: grid;
+    gap: 14px;
+    max-width: 68ch;
+  }
+  .dl-hinweise p { font-size: 14px; line-height: 1.65; color: var(--ink-mute); }
+  .dl-hinweise a { color: var(--ink-soft); border-bottom: 1px solid var(--line-strong); padding-bottom: 1px; }
+  .dl-hinweise a:hover { color: var(--accent); border-color: var(--accent); }
+
+  @media (max-width: 860px) {
+    .dl-karte { grid-template-columns: 1fr; gap: 22px; }
+  }
+</style>
+
+<nav class="nav">
+  <a href="../" class="brand" aria-label="Zur Startseite">
+    <span class="brand-mark">
+      <img src="../bilder/it-kicodebyts-mark.png" alt="IT-Kicodebyts Logo" width="30" height="30" />
+    </span>
+    <span class="brand-text">IT-Kicodebyts</span>
+  </a>
+
+  <ul class="nav-list">
+    <li><a href="../#leistungen">Leistungen</a></li>
+    <li><a href="../#schulungen">Schulungen</a></li>
+    <li><a href="../#preise">Preise</a></li>
+    <li><a href="../#betreuung">Betreuung</a></li>
+    <li><a href="../#ablauf">Ablauf</a></li>
+    <li><a href="../#werkzeug">Werkzeug</a></li>
+    <li><a href="../#faq">FAQ</a></li>
+    <li><a href="./" aria-current="page">Downloads</a></li>
+  </ul>
+
+  <div class="nav-aside">
+    <a href="../#kontakt" class="nav-cta">
+      Anfragen
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+    <button type="button" class="nav-burger" aria-label="Menü öffnen" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<main>
+  <section class="dl-seite" id="top">
+    <div class="container">
+
+      <header class="section-head">
+        <span class="eyebrow">Zum Herunterladen</span>
+        <h1 class="section-title">Downloads.</h1>
+        <p class="section-lede">
+          Zwei Werkzeuge, die aus eigenen Problemen entstanden sind. Beide laufen ohne
+          Konto, ohne Cloud und ohne Abo auf deinem Rechner, und beide sind kostenlos.
+        </p>
+      </header>
+
+      <div class="dl-liste">
+
+        <article class="dl-karte">
+          <div>
+            <div class="dl-kopf">
+              <h2>Game Detector V2 für OBS</h2>
+              <span class="dl-kennung">Smart Context Mode</span>
+            </div>
+            <p>
+              Erkennt, welche Anwendung du gerade tatsächlich benutzt, und setzt danach
+              automatisch deine Twitch-Kategorie und deinen Streamtitel. Nicht "läuft
+              irgendwo ein Spiel", sondern "welches Fenster ist vorne", und der Wechsel
+              passiert erst, wenn das eine Weile stabil so bleibt.
+              <em>Neue Versionen meldet das Plugin selbst und installiert sie auf einen Klick.</em>
+            </p>
+
+            <dl class="dl-daten">
+              <div><dt>Version</dt><dd id="gd-version">1.3.6</dd></div>
+              <div><dt>Größe</dt><dd id="gd-groesse">261 KB</dd></div>
+              <div><dt>System</dt><dd>Windows, OBS 28+</dd></div>
+              <div><dt>Lizenz</dt><dd>GPL-2.0</dd></div>
+            </dl>
+          </div>
+
+          <div class="dl-knoepfe">
+            <a class="btn btn-primary"
+               href="https://github.com/Tobse2910/Game-Detector-V2/releases/latest/download/Game-Detector-V2-latest.zip">
+              Herunterladen
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 21h16"/>
+              </svg>
+            </a>
+            <a class="dl-zweit" href="../game-detector/">
+              Was es kann, im Detail <span class="gr">Seite</span>
+            </a>
+            <a class="dl-zweit" href="https://github.com/Tobse2910/Game-Detector-V2">
+              Quelltext <span class="gr">GitHub</span>
+            </a>
+          </div>
+        </article>
+
+        <article class="dl-karte">
+          <div>
+            <div class="dl-kopf">
+              <h2>Call Klingel</h2>
+              <span class="dl-kennung">Erste Fassung</span>
+            </div>
+            <p>
+              Eingehende Handy-Anrufe am PC sehen und annehmen. Über Bluetooth wird der
+              Rechner zur Freisprechanlage, ohne Cloud, ohne zweite Rufnummer und ohne
+              App auf dem Handy.
+              <em>Windows läuft; Linux und macOS starten, können aber noch nicht telefonieren.</em>
+            </p>
+
+            <dl class="dl-daten">
+              <div><dt>Version</dt><dd>0.1.0</dd></div>
+              <div><dt>Größe</dt><dd>58 MB</dd></div>
+              <div><dt>System</dt><dd>Windows</dd></div>
+              <div><dt>Verbindung</dt><dd>Bluetooth</dd></div>
+            </dl>
+          </div>
+
+          <div class="dl-knoepfe">
+            <a class="btn btn-primary" href="https://kicodebyts.com/Downloads/CallKlingel-win-Setup.exe">
+              Installer laden
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 21h16"/>
+              </svg>
+            </a>
+            <a class="dl-zweit" href="https://kicodebyts.com/Downloads/CallKlingel-win-Portable.zip">
+              Ohne Installation <span class="gr">54 MB</span>
+            </a>
+            <a class="dl-zweit" href="https://github.com/Tobse2910/Call-Klingel">
+              Quelltext <span class="gr">GitHub</span>
+            </a>
+          </div>
+        </article>
+
+      </div>
+
+      <div class="dl-hinweise">
+        <p>
+          Windows warnt bei Programmen ohne kostenpflichtige Signatur. Beim Game Detector
+          liegt deshalb ein Installationsskript bei, das den Einbau übernimmt und vorher
+          prüft, ob OBS noch läuft.
+        </p>
+        <p>
+          Beide Programme entstehen in der Freizeit und sind kostenlos. Wer einen Fehler
+          findet oder etwas vermisst, kann auf GitHub ein Thema eröffnen oder sich
+          <a href="../#kontakt">direkt melden</a>.
+        </p>
+        <p>
+          <a href="../">Zur Startseite</a> ·
+          <a href="../impressum.html">Impressum</a> ·
+          <a href="../datenschutz.html">Datenschutz</a> ·
+          <a href="../agb.html">AGB</a>
+        </p>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<script>
+  // Menue fuer schmale Fenster. Das Stylesheet der Startseite blendet die
+  // Navigationsliste unter 900px aus und zeigt sie wieder bei .nav.open; das
+  // Umschalten macht dort main.js, das diese Seite nicht laedt.
+  (() => {
+    const leiste = document.querySelector(".nav");
+    const knopf = leiste?.querySelector(".nav-burger");
+    if (!leiste || !knopf) return;
+
+    const setzen = (offen) => {
+      leiste.classList.toggle("open", offen);
+      knopf.setAttribute("aria-expanded", String(offen));
+      knopf.setAttribute("aria-label", offen ? "Menü schließen" : "Menü öffnen");
+    };
+
+    knopf.addEventListener("click", () => setzen(!leiste.classList.contains("open")));
+    leiste.querySelectorAll(".nav-list a").forEach((a) => a.addEventListener("click", () => setzen(false)));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") setzen(false); });
+  })();
+
+  // Version und Dateigroesse des Plugins aktuell halten, ohne die Seite
+  // anzufassen. Schlaegt der Abruf fehl, bleibt der eingetragene Stand stehen.
+  (async () => {
+    const version = document.getElementById("gd-version");
+    const groesse = document.getElementById("gd-groesse");
+    if (!version && !groesse) return;
+    try {
+      const antwort = await fetch("https://api.github.com/repos/Tobse2910/Game-Detector-V2/releases/latest", {
+        headers: { Accept: "application/vnd.github+json" },
+      });
+      if (!antwort.ok) return;
+      const daten = await antwort.json();
+
+      const nummer = String(daten.tag_name || "").replace(/^v/i, "");
+      if (version && /^\d+\.\d+\.\d+$/.test(nummer)) version.textContent = nummer;
+
+      // An jedem Release haengt dieselbe Datei zweimal; die mit dem festen Namen
+      // ist die, auf die der Knopf zeigt.
+      const paket = (daten.assets || []).find((a) => a.name === "Game-Detector-V2-latest.zip");
+      if (groesse && paket?.size > 0) {
+        groesse.textContent = paket.size >= 1048576
+          ? `${(paket.size / 1048576).toFixed(1)} MB`
+          : `${Math.round(paket.size / 1024)} KB`;
+      }
+    } catch {
+      /* Stand bleibt stehen */
+    }
+  })();
+</script>

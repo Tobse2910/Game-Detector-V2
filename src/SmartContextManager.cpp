@@ -7,6 +7,7 @@
 
 #include "SmartContextManager.h"
 #include "ConfigManager.h"
+#include "FiveMServer.h"
 #include "GameDetector.h"
 #include "PlatformManager.h"
 
@@ -29,8 +30,10 @@
 namespace {
 
 // Reads the executable name and window title of the current foreground window.
-bool getForegroundApp(QString &exeName, QString &windowTitle)
+// The process id comes along because the FiveM server lookup needs it.
+bool getForegroundApp(QString &exeName, QString &windowTitle, quint32 &processId)
 {
+	processId = 0;
 #ifdef _WIN32
 	HWND hwnd = GetForegroundWindow();
 	if (!hwnd)
@@ -40,6 +43,8 @@ bool getForegroundApp(QString &exeName, QString &windowTitle)
 	GetWindowThreadProcessId(hwnd, &pid);
 	if (pid == 0)
 		return false;
+
+	processId = quint32(pid);
 
 	HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
 	if (!process)
@@ -65,6 +70,28 @@ bool getForegroundApp(QString &exeName, QString &windowTitle)
 	Q_UNUSED(windowTitle);
 	return false;
 #endif
+}
+
+// Setzt einen Text in eine Vorlage ein und raeumt die Trennzeichen auf, die
+// sonst uebrig bleiben. Aus "{server} | Titel" wird ohne Server also "Titel"
+// und nicht " | Titel".
+void ersetzeMitTrenner(QString &text, const QString &platzhalter, const QString &wert)
+{
+	if (!text.contains(platzhalter))
+		return;
+
+	if (!wert.isEmpty()) {
+		text.replace(platzhalter, wert);
+		return;
+	}
+
+	// Den Platzhalter samt anhaengendem oder vorangehendem Trenner entfernen.
+	static const QString trenner = "\\s*(?:[|\\-–•/]|::|:)\\s*";
+	const QString maske = QRegularExpression::escape(platzhalter);
+
+	text.remove(QRegularExpression(maske + trenner));
+	text.remove(QRegularExpression(trenner + maske));
+	text.remove(platzhalter);
 }
 
 bool processMatches(const QString &pattern, const QString &exeName, bool &exactMatch)
@@ -200,7 +227,10 @@ void SmartContextManager::stop()
 	currentWindowTitle.clear();
 	currentContext.clear();
 	currentRuleLabel.clear();
+	currentServerName.clear();
 	currentIgnored = false;
+	fiveMTitleLogged = false;
+	FiveMServer::reset();
 
 	blog(LOG_INFO, "[GameDetector/SmartContext] Disabled.");
 	emit statusUpdated();
@@ -274,15 +304,20 @@ QString SmartContextManager::renderTitle(const QString &templateText, const QStr
 	text.replace("{app}", appName);
 	text.replace("{window}", currentWindowTitle);
 
-	return text;
+	// Der Server ist nur bei FiveM bekannt. Steht er nicht fest, faellt der
+	// Platzhalter samt Trennzeichen weg, damit kein " | " am Anfang stehen bleibt.
+	ersetzeMitTrenner(text, "{server}", currentServerName);
+
+	return text.simplified();
 }
 
 void SmartContextManager::poll()
 {
 	QString exeName;
 	QString windowTitle;
+	quint32 processId = 0;
 
-	if (!getForegroundApp(exeName, windowTitle)) {
+	if (!getForegroundApp(exeName, windowTitle, processId)) {
 		// No usable foreground window (lock screen, UAC prompt, …). Treat it as
 		// neutral rather than losing the accumulated time.
 		emit statusUpdated();
@@ -291,6 +326,15 @@ void SmartContextManager::poll()
 
 	currentProcess = exeName;
 	currentWindowTitle = windowTitle;
+	currentServerName = FiveMServer::currentName(exeName, processId);
+
+	// Einmal je Sitzung festhalten, wie FiveM sein Fenster benennt. Traegt der
+	// Titel den Servernamen, genuegt kuenftig {window} ohne Dateizugriff.
+	if (!currentServerName.isEmpty() && !fiveMTitleLogged) {
+		fiveMTitleLogged = true;
+		blog(LOG_INFO, "[GameDetector/FiveM] Window title while connected: '%s'",
+		     qUtf8Printable(windowTitle));
+	}
 
 	const SmartContextResolution resolution = resolve(exeName, windowTitle);
 

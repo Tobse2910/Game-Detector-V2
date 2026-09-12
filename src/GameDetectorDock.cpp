@@ -697,8 +697,15 @@ void GameDetectorDock::onSmartContextStatusUpdated()
 		return;
 	}
 
+	// Bei FiveM ist der Prozessname allein wenig wert, entscheidend ist der
+	// Server. Deshalb steht er hier gleich dahinter, dann sieht man sofort, ob
+	// er erkannt wurde.
 	const QString process = smart.activeProcess();
-	smartAppValueLabel->setText(process.isEmpty() ? QString("-") : process);
+	const QString server = smart.activeServerName();
+	QString appText = process.isEmpty() ? QString("-") : process;
+	if (!server.isEmpty())
+		appText += QString(" (%1)").arg(server);
+	smartAppValueLabel->setText(appText);
 
 	if (smart.contextIsIgnored()) {
 		smartContextValueLabel->setText(obs_module_text("SmartContext.Status.Ignored"));

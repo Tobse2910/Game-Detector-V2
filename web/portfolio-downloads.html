@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Downloads · Tobias Schlothane</title>
+<meta name="description" content="Meine Anwendungen zum Herunterladen: OBS Game Detector fuer Twitch-Streamer und Call Klingel fuer Handy-Anrufe am PC. Kostenlos, fuer Windows, Quellcode offen.">
+<meta name="theme-color" content="#0f0e0c">
+<link rel="canonical" href="https://kicodebyts.com/Downloads/">
+<link rel="icon" href="/Meinlogo-animiert.gif">
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="de_DE">
+<meta property="og:url" content="https://kicodebyts.com/Downloads/">
+<meta property="og:title" content="Downloads · Tobias Schlothane">
+<meta property="og:description" content="Zwei Windows-Anwendungen zum Herunterladen. Kostenlos, Quellcode offen.">
+<meta property="og:image" content="https://kicodebyts.com/game-detector-smartcontext.jpg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Inter+Tight:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+<!-- Dasselbe Stylesheet wie die Portfolio-App: die Seite benutzt deren eigene
+     Klassen und sieht damit nicht nur aehnlich aus, sondern gleich. -->
+<link href="/static/css/main.7f34b209.css" rel="stylesheet">
+
+<style>
+  /* Nur das, was im Stylesheet der App fehlt, weil sie es nirgends benutzt.
+     Beides muss flex sein, sonst greifen die Ausrichtungsklassen daran nicht. */
+  .nur-schmal { display: flex; }
+  @media (min-width: 1024px) { .nur-schmal { display: none; } }
+  .nur-breit { display: none; }
+  @media (min-width: 1024px) { .nur-breit { display: flex; } }
+
+  /* Beide Bilder liegen als 1280x853 vor, das ist 3:2. Der feste Rahmen
+     haelt den Platz frei, damit beim Laden nichts springt. */
+  .bild-3zu2 { aspect-ratio: 3 / 2; }
+  .zahlen { font-variant-numeric: tabular-nums; }
+
+  /* Die App benutzt nur bg-neutral-950/90, die volle Deckung fehlt in
+     ihrem Build. Deshalb hier selbst gesetzt. */
+  .bg-neutral-950 { background-color: #0a0a0a; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body class="bg-neutral-950 text-neutral-100">
+
+<header class="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-neutral-950/90 border-b border-white/10">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+
+    <a href="/" class="flex items-center gap-3 group" aria-label="Zur Startseite">
+      <span class="relative">
+        <span class="absolute inset-0 bg-gradient-to-tr from-accent-500 to-accent-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-100 transition-opacity duration-300"></span>
+        <span class="relative block h-10 w-10 rounded-xl overflow-hidden shadow-lg">
+          <img src="/Meinlogo-animiert.gif" alt="Logo von Tobias Schlothane" width="40" height="40" class="w-full h-full object-cover">
+        </span>
+      </span>
+      <span class="hidden sm:block">
+        <span class="block text-sm font-semibold text-white leading-tight">Tobias · Schlothane</span>
+      </span>
+    </a>
+
+    <nav class="nur-breit items-center gap-8" aria-label="Hauptnavigation">
+      <a href="/#projekte" class="relative text-sm text-neutral-300 hover:text-white transition-colors">Projekte</a>
+      <a href="/#uber-mich" class="relative text-sm text-neutral-300 hover:text-white transition-colors">Über mich</a>
+      <a href="/#skills" class="relative text-sm text-neutral-300 hover:text-white transition-colors">Skills</a>
+      <a href="/#setup" class="relative text-sm text-neutral-300 hover:text-white transition-colors">Setup</a>
+      <a href="/#ki-schulungen" class="relative text-sm text-neutral-300 hover:text-white transition-colors">KI-Schulungen</a>
+      <a href="/Downloads/" aria-current="page" class="relative text-sm text-white font-medium">Downloads</a>
+      <a href="/#kontakt" class="relative text-sm text-neutral-300 hover:text-white transition-colors">Kontakt</a>
+    </nav>
+
+    <button type="button" id="menue-knopf" aria-expanded="false" aria-controls="menue"
+            class="nur-schmal relative z-50 w-11 h-11 flex flex-col items-center justify-center gap-1.5"
+            aria-label="Menü öffnen">
+      <span class="w-6 h-0.5 bg-white transition-all duration-300"></span>
+      <span class="w-6 h-0.5 bg-white transition-all duration-300"></span>
+      <span class="w-6 h-0.5 bg-white transition-all duration-300"></span>
+    </button>
+  </div>
+</header>
+
+<!-- Menü für schmale Fenster, nach dem Muster der App -->
+<div id="menue" hidden class="fixed inset-0 z-40">
+  <div id="menue-schatten" class="absolute inset-0 bg-black/90 backdrop-blur-md"></div>
+  <div class="absolute top-0 right-0 h-full w-72 bg-gradient-to-b from-neutral-900 via-neutral-950 to-black border-l border-accent-500/20">
+    <div class="flex flex-col h-full p-6 pt-24">
+      <nav class="flex flex-col gap-2" aria-label="Navigation">
+        <a href="/#projekte" class="group flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-neutral-300 hover:text-white hover:bg-gradient-to-r hover:from-accent-500/10 hover:to-accent-500/10 border border-transparent hover:border-accent-500/20 transition-all duration-200">Projekte</a>
+        <a href="/#uber-mich" class="group flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-neutral-300 hover:text-white hover:bg-gradient-to-r hover:from-accent-500/10 hover:to-accent-500/10 border border-transparent hover:border-accent-500/20 transition-all duration-200">Über mich</a>
+        <a href="/#skills" class="group flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-neutral-300 hover:text-white hover:bg-gradient-to-r hover:from-accent-500/10 hover:to-accent-500/10 border border-transparent hover:border-accent-500/20 transition-all duration-200">Skills</a>
+        <a href="/#setup" class="group flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-neutral-300 hover:text-white hover:bg-gradient-to-r hover:from-accent-500/10 hover:to-accent-500/10 border border-transparent hover:border-accent-500/20 transition-all duration-200">Setup</a>
+        <a href="/#ki-schulungen" class="group flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-neutral-300 hover:text-white hover:bg-gradient-to-r hover:from-accent-500/10 hover:to-accent-500/10 border border-transparent hover:border-accent-500/20 transition-all duration-200">KI-Schulungen</a>
+        <a href="/Downloads/" aria-current="page" class="px-4 py-3.5 rounded-xl text-base font-medium text-white bg-accent-500/10 border border-accent-500/20">Downloads</a>
+        <a href="/#kontakt" class="group flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-neutral-300 hover:text-white hover:bg-gradient-to-r hover:from-accent-500/10 hover:to-accent-500/10 border border-transparent hover:border-accent-500/20 transition-all duration-200">Kontakt</a>
+      </nav>
+      <div class="mt-auto pt-6 border-t border-white/10">
+        <p class="text-xs text-neutral-500 text-center">© 2026 KiCodeByts</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main class="pt-24">
+  <section class="pt-16 pb-24">
+    <div class="max-w-7xl mx-auto px-6">
+
+      <div class="mb-16 text-center">
+        <p class="text-xs uppercase tracking-[0.3em] text-neutral-400 font-medium mb-3">Zum Herunterladen</p>
+        <h1 class="text-4xl md:text-6xl font-bold display-xl mb-6">Meine Anwendungen</h1>
+        <p class="max-w-2xl mx-auto text-neutral-300 leading-relaxed">
+          Zwei Programme für Windows, entstanden aus eigenen Problemen. Beide sind
+          kostenlos, laufen ohne Konto und ohne Cloud auf deinem Rechner, und der
+          Quellcode liegt offen.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+
+        <article class="group relative rounded-2xl border border-accent-500/20 bg-neutral-800/90 backdrop-blur-sm overflow-hidden hover:border-accent-400/50 transition-all duration-500 flex flex-col">
+          <img src="/game-detector-smartcontext.jpg" alt="Game Detector: das Plugin im Dock von OBS Studio"
+               width="1280" height="853" loading="lazy"
+               class="w-full bild-3zu2 object-cover">
+
+          <div class="relative p-6 space-y-4 flex flex-col flex-1">
+            <h2 class="text-xl font-bold text-accent-400 group-hover:text-accent-300 transition-colors duration-300">
+              OBS Game Detector
+            </h2>
+
+            <p class="text-sm text-neutral-300 leading-relaxed">
+              Für Twitch-Streamer. Das Plugin wertet aus, welches Fenster bei dir gerade
+              vorne ist, und setzt danach Kategorie und Streamtitel automatisch. Spiel
+              vorne heißt Kategorie ist das Spiel, Browser heißt Just Chatting, Discord
+              und OBS ändern gar nichts. Gewechselt wird erst, wenn das eine Weile stabil
+              so bleibt. Neue Versionen meldet es selbst und installiert sie auf einen Klick.
+            </p>
+
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-xs text-neutral-500">Läuft auf:</span>
+              <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-neutral-800 text-neutral-300 border border-neutral-700">Windows</span>
+              <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-neutral-800 text-neutral-300 border border-neutral-700">OBS 28+</span>
+            </div>
+
+            <dl class="flex flex-wrap gap-6 pt-2 border-t border-white/10">
+              <div>
+                <dt class="text-[10px] uppercase tracking-[0.3em] text-neutral-500">Version</dt>
+                <dd class="text-sm text-neutral-300 zahlen" id="gd-version">1.3.6</dd>
+              </div>
+              <div>
+                <dt class="text-[10px] uppercase tracking-[0.3em] text-neutral-500">Größe</dt>
+                <dd class="text-sm text-neutral-300 zahlen" id="gd-groesse">261 KB</dd>
+              </div>
+              <div>
+                <dt class="text-[10px] uppercase tracking-[0.3em] text-neutral-500">Lizenz</dt>
+                <dd class="text-sm text-neutral-300">GPL-2.0</dd>
+              </div>
+            </dl>
+
+            <div class="flex flex-wrap gap-2 pt-2 mt-auto">
+              <a href="https://github.com/Tobse2910/Game-Detector-V2/releases/latest/download/Game-Detector-V2-latest.zip"
+                 class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent-500 text-white font-bold hover:bg-accent-400 transition-all duration-300">
+                Download für Windows
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 21h16"/>
+                </svg>
+              </a>
+              <a href="https://github.com/Tobse2910/Game-Detector-V2"
+                 class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-neutral-700 text-neutral-300 font-semibold hover:border-accent-400/50 hover:text-white transition-all duration-300">
+                Quellcode
+              </a>
+            </div>
+          </div>
+        </article>
+
+        <article class="group relative rounded-2xl border border-accent-500/20 bg-neutral-800/90 backdrop-blur-sm overflow-hidden hover:border-accent-400/50 transition-all duration-500 flex flex-col">
+          <img src="/call-klingel.jpg" alt="Call Klingel: eingehender Anruf auf dem Bildschirm des Rechners"
+               width="1280" height="853" loading="lazy"
+               class="w-full bild-3zu2 object-cover">
+
+          <div class="relative p-6 space-y-4 flex flex-col flex-1">
+            <h2 class="text-xl font-bold text-accent-400 group-hover:text-accent-300 transition-colors duration-300">
+              Call Klingel
+            </h2>
+
+            <p class="text-sm text-neutral-300 leading-relaxed">
+              Eingehende Handy-Anrufe am PC sehen und annehmen. Über Bluetooth wird der
+              Rechner zur Freisprechanlage, ohne Cloud, ohne zweite Rufnummer und ohne App
+              auf dem Handy. Das Telefon bleibt das Telefon, der PC spricht nur das
+              Freisprechprofil mit ihm. Kontakte werden lokal gelesen, Rufnummern in
+              Protokollen maskiert.
+            </p>
+
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-xs text-neutral-500">Läuft auf:</span>
+              <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-neutral-800 text-neutral-300 border border-neutral-700">Windows</span>
+              <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-neutral-800 text-neutral-300 border border-neutral-700">Bluetooth</span>
+            </div>
+
+            <dl class="flex flex-wrap gap-6 pt-2 border-t border-white/10">
+              <div>
+                <dt class="text-[10px] uppercase tracking-[0.3em] text-neutral-500">Version</dt>
+                <dd class="text-sm text-neutral-300 zahlen">0.1.0</dd>
+              </div>
+              <div>
+                <dt class="text-[10px] uppercase tracking-[0.3em] text-neutral-500">Installer</dt>
+                <dd class="text-sm text-neutral-300 zahlen">58 MB</dd>
+              </div>
+              <div>
+                <dt class="text-[10px] uppercase tracking-[0.3em] text-neutral-500">Portabel</dt>
+                <dd class="text-sm text-neutral-300 zahlen">54 MB</dd>
+              </div>
+            </dl>
+
+            <div class="flex flex-wrap gap-2 pt-2 mt-auto">
+              <a href="/Downloads/CallKlingel-win-Setup.exe"
+                 class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent-500 text-white font-bold hover:bg-accent-400 transition-all duration-300">
+                Installer für Windows
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 21h16"/>
+                </svg>
+              </a>
+              <a href="/Downloads/CallKlingel-win-Portable.zip"
+                 class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-neutral-700 text-neutral-300 font-semibold hover:border-accent-400/50 hover:text-white transition-all duration-300">
+                Portable Fassung
+              </a>
+              <a href="https://github.com/Tobse2910/Call-Klingel"
+                 class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-neutral-700 text-neutral-300 font-semibold hover:border-accent-400/50 hover:text-white transition-all duration-300">
+                Quellcode
+              </a>
+            </div>
+          </div>
+        </article>
+
+      </div>
+
+      <div class="max-w-3xl mx-auto mt-16 pt-8 border-t border-white/10 space-y-4">
+        <p class="text-sm text-neutral-400 leading-relaxed">
+          Windows warnt bei Programmen ohne kostenpflichtige Signatur. Beim Game Detector
+          liegt ein Installationsskript bei, das den Einbau übernimmt und vorher prüft, ob
+          OBS noch läuft. Call Klingel bringt einen eigenen Installer mit.
+        </p>
+        <p class="text-sm text-neutral-400 leading-relaxed">
+          Beide Programme entstehen in der Freizeit. Wer einen Fehler findet oder etwas
+          vermisst, kann auf GitHub ein Thema eröffnen oder mich
+          <a href="/#kontakt" class="text-accent-400 hover:text-accent-300 underline">direkt anschreiben</a>.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="border-t border-white/10 py-8">
+    <div class="max-w-7xl mx-auto px-6 flex flex-wrap items-center justify-between gap-4">
+      <a href="/" class="text-sm text-neutral-300 hover:text-accent-400 transition-colors">← Zurück zum Portfolio</a>
+      <p class="text-xs text-neutral-500">© 2026 Tobias. Entwickelt mit React &amp; Tailwind CSS.</p>
+    </div>
+  </footer>
+</main>
+
+<script>
+  // Menue fuer schmale Fenster
+  (() => {
+    const knopf = document.getElementById("menue-knopf");
+    const menue = document.getElementById("menue");
+    const schatten = document.getElementById("menue-schatten");
+    if (!knopf || !menue) return;
+
+    const setzen = (offen) => {
+      menue.hidden = !offen;
+      knopf.setAttribute("aria-expanded", String(offen));
+      knopf.setAttribute("aria-label", offen ? "Menü schließen" : "Menü öffnen");
+      document.body.style.overflow = offen ? "hidden" : "";
+    };
+
+    knopf.addEventListener("click", () => setzen(menue.hidden));
+    schatten?.addEventListener("click", () => setzen(false));
+    menue.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => setzen(false)));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menue.hidden) setzen(false); });
+  })();
+
+  // Version und Groesse des Plugins aus dem neuesten Release holen. Schlaegt der
+  // Abruf fehl, bleibt der eingetragene Stand stehen.
+  (async () => {
+    const version = document.getElementById("gd-version");
+    const groesse = document.getElementById("gd-groesse");
+    if (!version && !groesse) return;
+    try {
+      const antwort = await fetch("https://api.github.com/repos/Tobse2910/Game-Detector-V2/releases/latest", {
+        headers: { Accept: "application/vnd.github+json" },
+      });
+      if (!antwort.ok) return;
+      const daten = await antwort.json();
+
+      const nummer = String(daten.tag_name || "").replace(/^v/i, "");
+      if (version && /^\d+\.\d+\.\d+$/.test(nummer)) version.textContent = nummer;
+
+      const paket = (daten.assets || []).find((a) => a.name === "Game-Detector-V2-latest.zip");
+      if (groesse && paket?.size > 0) {
+        groesse.textContent = paket.size >= 1048576
+          ? `${(paket.size / 1048576).toFixed(1)} MB`
+          : `${Math.round(paket.size / 1024)} KB`;
+      }
+    } catch {
+      /* Stand bleibt stehen */
+    }
+  })();
+</script>
+</body>
+</html>

@@ -16,7 +16,7 @@
      Bausteine, statt sie nachzubauen. -->
 <link rel="preload" href="../assets/fonts/hanken-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="../assets/css/fonts.css?v=20260618">
-<link rel="stylesheet" href="../assets/css/styles.css?v=20260804-preise">
+<link rel="stylesheet" href="../assets/css/styles.css?v=20260912-nav2">
 
 <style>
   /* Nur was das Stylesheet der Startseite nicht hat. Alle Werte kommen aus seinen
@@ -117,8 +117,7 @@
     .regel-kopf { display: none; }
     .regel-pfeil { display: none; }
     .regel-ziel::before { content: "→ "; color: var(--accent); }
-  }
-</style>
+  }</style>
 
 <nav class="nav">
   <a href="../" class="brand" aria-label="Zur Startseite">
@@ -136,6 +135,7 @@
     <li><a href="../#ablauf">Ablauf</a></li>
     <li><a href="../#werkzeug">Werkzeug</a></li>
     <li><a href="../#faq">FAQ</a></li>
+    <li><a href="../downloads/">Downloads</a></li>
   </ul>
 
   <div class="nav-aside">
@@ -143,6 +143,9 @@
       Anfragen
       <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </a>
+    <button type="button" class="nav-burger" aria-label="Menü öffnen" aria-expanded="false">
+      <span></span><span></span>
+    </button>
   </div>
 </nav>
 
@@ -374,6 +377,25 @@
 </main>
 
 <script>
+  // Menue fuer schmale Fenster. Das Stylesheet der Startseite blendet die
+  // Navigationsliste unter 900px aus und zeigt sie wieder bei .nav.open; das
+  // Umschalten macht dort main.js, das diese Seite nicht laedt.
+  (() => {
+    const leiste = document.querySelector(".nav");
+    const knopf = leiste?.querySelector(".nav-burger");
+    if (!leiste || !knopf) return;
+
+    const setzen = (offen) => {
+      leiste.classList.toggle("open", offen);
+      knopf.setAttribute("aria-expanded", String(offen));
+      knopf.setAttribute("aria-label", offen ? "Menü schließen" : "Menü öffnen");
+    };
+
+    knopf.addEventListener("click", () => setzen(!leiste.classList.contains("open")));
+    leiste.querySelectorAll(".nav-list a").forEach((a) => a.addEventListener("click", () => setzen(false)));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") setzen(false); });
+  })();
+
   // Versionsnummer aktuell halten, ohne die Seite anzufassen. Schlaegt der Abruf
   // fehl, bleibt der eingetragene Stand stehen.
   (async () => {

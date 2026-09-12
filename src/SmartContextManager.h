@@ -56,6 +56,8 @@ public:
 	// Current state, read by the dock once per tick.
 	QString activeProcess() const { return currentProcess; }
 	QString activeWindowTitle() const { return currentWindowTitle; }
+	// Bei FiveM der Name des Servers, sonst leer.
+	QString activeServerName() const { return currentServerName; }
 	QString detectedContext() const { return currentContext; }
 	bool contextIsIgnored() const { return currentIgnored; }
 	QString appliedCategory() const { return currentAppliedCategory; }
@@ -103,6 +105,8 @@ private:
 	// Foreground state as of the last poll.
 	QString currentProcess;
 	QString currentWindowTitle;
+	QString currentServerName;
+	bool fiveMTitleLogged = false;
 	QString currentContext;
 	QString currentRuleLabel;
 	bool currentIgnored = false;
