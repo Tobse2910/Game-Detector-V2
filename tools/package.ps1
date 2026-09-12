@@ -79,7 +79,18 @@ function New-GdPackage {
     Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip
     & $Melden ("ZIP fertig, " + [math]::Round((Get-Item $zip).Length / 1KB) + " KB")
 
-    return $zip
+    # Dieselbe Datei noch einmal unter festem Namen. Damit gibt es einen Link, der
+    # dauerhaft die neueste Version liefert:
+    #   github.com/<repo>/releases/latest/download/Game-Detector-V2-latest.zip
+    # Das ist der Link fuer eine eigene Webseite: er zeigt nie auf eine veraltete
+    # Datei, weil nichts dorthin kopiert werden muss.
+    $festerName = Join-Path $Zielordner "Game-Detector-V2-latest.zip"
+    Copy-Item -LiteralPath $zip -Destination $festerName -Force
+    & $Melden "zweite Kopie als Game-Detector-V2-latest.zip"
+
+    # Versioniertes zuerst: eine Plugin-Version vor 1.3.6 nimmt das erste ZIP am
+    # Release, ohne auf den Namen zu schauen.
+    return @($zip, $festerName)
 }
 
 # Prueft, was das Plugin beim Update-Check tatsaechlich sieht. Wirft, wenn das

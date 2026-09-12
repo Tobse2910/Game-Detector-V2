@@ -34,6 +34,8 @@ $tag = "v$Version"
 $remote = "tobse"
 $ghRepo = "Tobse2910/Game-Detector-V2"
 
+. "$PSScriptRoot\package.ps1"
+
 function Schritt($text) { Write-Host ""; Write-Host "== $text" -ForegroundColor Cyan }
 function Info($text) { Write-Host "   $text" -ForegroundColor Gray }
 function Gut($text) { Write-Host "   $text" -ForegroundColor Green }
@@ -138,67 +140,19 @@ try {
         }
     }
 
-    $dll = Join-Path $repo "build_x64\RelWithDebInfo\game-detector.dll"
-    if (-not (Test-Path $dll)) { Abbruch "Die gebaute DLL fehlt: $dll" }
-
-    # Die Version steckt als Zeichenkette in der DLL. Stimmt sie nicht, wuerde der
-    # Update-Hinweis bei allen Nutzern dauerhaft stehen bleiben.
-    $bytes = [System.IO.File]::ReadAllBytes($dll)
-    $text = [System.Text.Encoding]::ASCII.GetString($bytes)
-    if ($text -notmatch [regex]::Escape($Version)) { Abbruch "Die gebaute DLL enthaelt die Version $Version nicht." }
-    Gut "DLL gebaut und enthaelt $Version"
-
     # --- Paket ---------------------------------------------------------------
     Schritt "Paket schnueren"
 
     $arbeit = Join-Path ([System.IO.Path]::GetTempPath()) ("gd-release-" + $Version + "-" + (Get-Date -Format "HHmmss"))
-    $stage = Join-Path $arbeit "package"
-    $plugin = Join-Path $stage "plugin"
+    New-Item -ItemType Directory -Force -Path $arbeit | Out-Null
 
-    New-Item -ItemType Directory -Force -Path (Join-Path $plugin "obs-plugins\64bit") | Out-Null
-    New-Item -ItemType Directory -Force -Path (Join-Path $plugin "data\obs-plugins\game-detector") | Out-Null
-
-    Copy-Item $dll (Join-Path $plugin "obs-plugins\64bit") -Force
-    Copy-Item (Join-Path $repo "data\locale") (Join-Path $plugin "data\obs-plugins\game-detector") -Recurse -Force
-    Copy-Item (Join-Path $repo "data\update.ps1") (Join-Path $plugin "data\obs-plugins\game-detector") -Force
-    Copy-Item (Join-Path $repo "dist\install.ps1"), (Join-Path $repo "dist\uninstall.ps1"),
-              (Join-Path $repo "dist\ui.ps1") $plugin -Force
-    foreach ($f in @("INSTALL.md", "README.md", "FORK-CHANGES.md")) {
-        Copy-Item (Join-Path $repo $f) $plugin -Force
-    }
-    # In der Wurzel nur, was angeklickt werden soll.
-    Copy-Item (Join-Path $repo "dist\Installieren.bat"), (Join-Path $repo "dist\Deinstallieren.bat"),
-              (Join-Path $repo "dist\ANLEITUNG.txt"), (Join-Path $repo "LICENSE") $stage -Force
-
-    $pflicht = @(
-        "Installieren.bat", "Deinstallieren.bat", "ANLEITUNG.txt", "LICENSE",
-        "plugin\install.ps1", "plugin\uninstall.ps1", "plugin\ui.ps1",
-        "plugin\obs-plugins\64bit\game-detector.dll",
-        "plugin\data\obs-plugins\game-detector\update.ps1",
-        "plugin\data\obs-plugins\game-detector\locale\de-DE.ini",
-        "plugin\data\obs-plugins\game-detector\locale\en-US.ini"
-    )
-    foreach ($p in $pflicht) {
-        if (-not (Test-Path (Join-Path $stage $p))) { Abbruch "Im Paket fehlt: $p" }
-    }
-    Info "$($pflicht.Count) Pflichtdateien vorhanden"
-
-    # Die Startdateien rufen Pfade fest auf. Ein Paket, in dem die Dateien nur
-    # irgendwo liegen, laesst den Installer ins Leere zeigen: genau der Fehler, den
-    # 1.1.0 und 1.2.0 hatten.
-    foreach ($launcher in @("Installieren.bat", "Deinstallieren.bat")) {
-        $bat = Get-Content (Join-Path $stage $launcher) -Raw
-        foreach ($m in [regex]::Matches($bat, "%~dp0([^`"']+)")) {
-            $ziel = Join-Path $stage $m.Groups[1].Value
-            if (-not (Test-Path $ziel)) { Abbruch "$launcher ruft '$($m.Groups[1].Value)' auf, das im Paket fehlt." }
-            Info "$launcher -> $($m.Groups[1].Value)"
-        }
+    try {
+        $dateien = New-GdPackage -Repo $repo -Version $Version -Zielordner $arbeit -Melden ${function:Info}
+    } catch {
+        Abbruch $_.Exception.Message
     }
 
-    $zip = Join-Path $arbeit "Game-Detector-V2-$tag.zip"
-    Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip
-    $groesse = [math]::Round((Get-Item $zip).Length / 1KB)
-    Gut "ZIP fertig, $groesse KB"
+    $zip = $dateien[0]
 
     # --- Release-Text --------------------------------------------------------
     Schritt "Release-Text"
@@ -287,8 +241,8 @@ Fork von [FabioZumbi12/game-detector](https://github.com/FabioZumbi12/game-detec
 
     Schritt "Release veroeffentlichen"
 
-    $anlegen = Extern gh @("release", "create", $tag, $zip, "--repo", $ghRepo,
-                           "--title", "Game Detector V2 $Version", "--notes-file", $textDatei)
+    $anlegen = Extern gh (@("release", "create", $tag) + $dateien + @("--repo", $ghRepo,
+                           "--title", "Game Detector V2 $Version", "--notes-file", $textDatei))
     if ($anlegen.Code -ne 0) {
         Info $anlegen.Ausgabe
         Abbruch ("Das Release liess sich nicht anlegen. Tag und Commit sind schon auf GitHub. " +
@@ -300,26 +254,11 @@ Fork von [FabioZumbi12/game-detector](https://github.com/FabioZumbi12/game-detec
 
     # Genau der Aufruf, den UpdateChecker macht. Ohne ZIP daran bringt das Release
     # niemandem etwas: der Ein-Klick-Knopf im Dock haette nichts zu laden.
-    # Ganze Antwort holen und hier auswerten. Ein jq-Ausdruck, der ein Objekt baut,
-    # laesst gh mit "expected an object but got: string" abbrechen.
-    $abfrage = Extern gh @("api", "repos/$ghRepo/releases/latest")
-    if ($abfrage.Code -ne 0) { Abbruch "Die Release-Abfrage ist fehlgeschlagen: $($abfrage.Ausgabe)" }
-
     try {
-        $daten = $abfrage.Ausgabe | ConvertFrom-Json
+        Assert-GdReleaseSichtbar -GhRepo $ghRepo -Tag $tag -Melden ${function:Info}
     } catch {
-        Abbruch "Die Antwort von GitHub war kein JSON: $($abfrage.Ausgabe)"
+        Abbruch $_.Exception.Message
     }
-
-    $zips = @($daten.assets | Where-Object { $_.name -like "*.zip" } | ForEach-Object { $_.name })
-
-    Info "neuestes Release: $($daten.tag_name)"
-    Info "Vorabversion:     $($daten.prerelease)"
-    Info "ZIP daran:        $($zips -join ', ')"
-
-    if ($daten.tag_name -ne $tag) { Abbruch "GitHub liefert '$($daten.tag_name)' als neuestes Release, nicht $tag." }
-    if ($daten.prerelease) { Abbruch "Das Release ist als Vorabversion markiert; der Update-Check ueberspringt es." }
-    if (-not $zips) { Abbruch "Am Release haengt kein ZIP; der Update-Knopf haette nichts zu laden." }
 
     Write-Host ""
     Gut "Release $Version ist draussen und wird vom Update-Check gefunden."

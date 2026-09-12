@@ -197,7 +197,7 @@ try {
     New-Item -ItemType Directory -Force -Path $arbeit | Out-Null
 
     try {
-        $zip = New-GdPackage -Repo $repo -Version $version -Zielordner $arbeit -Melden ${function:Info}
+        $dateien = New-GdPackage -Repo $repo -Version $version -Zielordner $arbeit -Melden ${function:Info}
     } catch {
         Warnung "Das Paket wurde abgelehnt: $($_.Exception.Message)"
         exit 1
@@ -222,8 +222,8 @@ Fork von [FabioZumbi12/game-detector](https://github.com/FabioZumbi12/game-detec
     $notizDatei = Join-Path $arbeit "notes.md"
     Set-Content -LiteralPath $notizDatei -Value $notiz -Encoding UTF8
 
-    $anlegen = Extern gh @("release", "create", $tag, $zip, "--repo", $ghRepo,
-                           "--title", "Game Detector V2 $version", "--notes-file", $notizDatei)
+    $anlegen = Extern gh (@("release", "create", $tag) + $dateien + @("--repo", $ghRepo,
+                           "--title", "Game Detector V2 $version", "--notes-file", $notizDatei))
     if ($anlegen.Code -ne 0) {
         Warnung "Das Release liess sich nicht anlegen: $($anlegen.Ausgabe)"
         exit 1
