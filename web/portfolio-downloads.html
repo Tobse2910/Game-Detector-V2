@@ -32,8 +32,9 @@
   .nur-breit { display: none; }
   @media (min-width: 1024px) { .nur-breit { display: flex; } }
 
-  /* Beide Bilder liegen als 1280x853 vor, das ist 3:2. Der feste Rahmen
-     haelt den Platz frei, damit beim Laden nichts springt. */
+  /* Beide Bilder haben das Verhaeltnis 3:2, der Game Detector als 1536x1024,
+     Call Klingel als 1280x853. Der feste Rahmen haelt den Platz frei, damit beim
+     Laden nichts springt. */
   .bild-3zu2 { aspect-ratio: 3 / 2; }
   .zahlen { font-variant-numeric: tabular-nums; }
 
@@ -121,8 +122,8 @@
       <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
 
         <article class="group relative rounded-2xl border border-accent-500/20 bg-neutral-800/90 backdrop-blur-sm overflow-hidden hover:border-accent-400/50 transition-all duration-500 flex flex-col">
-          <img src="/game-detector-smartcontext.jpg" alt="Game Detector: das Plugin im Dock von OBS Studio"
-               width="1280" height="853" loading="lazy"
+          <img src="/game-detector-smartcontext.jpg?v=20260913" alt="Game Detector: das Dock in OBS, die Einstellungen, der Twitch-Chat und die Streaminformation"
+               width="1536" height="1024" loading="lazy"
                class="w-full bild-3zu2 object-cover">
 
           <div class="relative p-6 space-y-4 flex flex-col flex-1">
