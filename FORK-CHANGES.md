@@ -76,11 +76,10 @@ The rule list ships with defaults and is fully editable under
 
 | Process / Rule | Category | Notes |
 |---|---|---|
-| `WARDOGS.exe` | WARDOGS | own title template |
-| `FiveM.exe`, `FiveM_*.exe` | Grand Theft Auto V | own title template |
+| `FiveM.exe`, `FiveM_*.exe` | Grand Theft Auto V | title template `{server} | {titel}` |
 | `Code.exe`, `devenv.exe`, `idea64.exe`, … | Software and Game Development | dev tools |
 | `firefox.exe`, `chrome.exe`, `msedge.exe` | Just Chatting | browsers |
-| `discord.exe`, `obs64.exe`, `explorer.exe`, `WaveLink.exe`, `Spotify.exe`, `steam.exe`, `EpicGamesLauncher.exe`, `Launcher.exe`, … | - | ignored, category is kept |
+| `discord.exe`, `obs64.exe`, `WaveLink.exe`, `Spotify.exe`, `steam.exe`, `EpicGamesLauncher.exe`, `Launcher.exe`, … | - | ignored, category is kept |
 
 Process names support `*` and `?` wildcards. Title templates support the placeholders
 `{game}`, `{category}`, `{app}` and `{window}`. Browser handling deliberately uses only

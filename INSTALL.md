@@ -102,10 +102,10 @@ Verzögerung und Priorität.
 | Ignorieren | Dieses Programm ändert nie etwas |
 | Priorität | Höher gewinnt, wenn mehrere Regeln passen |
 
-**Titel-Platzhalter:** `{game}`, `{category}`, `{app}`, `{window}`
+**Titel-Platzhalter:** `{titel}`, `{server}`, `{game}`, `{category}`, `{app}`, `{window}`
 
-> **Tipp:** Programmnamen sind selten das, was man erwartet. Wardogs heißt
-> `WardogsClient-Win64-Shipping.exe`, Elgato Wave Link heißt `Elgato.WaveLink.exe`.
+> **Tipp:** Programmnamen sind selten das, was man erwartet. FiveM heißt im Spiel
+> `FiveM_b3570_GTAProcess.exe`, Elgato Wave Link heißt `Elgato.WaveLink.exe`.
 > Starte das Programm, schau im Dock bei **„Aktive Anwendung"** nach - dort steht der
 > echte Name.
 
