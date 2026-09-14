@@ -197,9 +197,9 @@ SmartContextManager::SmartContextManager(QObject *parent) : QObject(parent)
  * die Hand genommen, und das ist ab dann der Grundtitel.
  *
  * Beides liegt in den Einstellungen, damit es einen OBS-Neustart uebersteht.
- * Ohne das waere nach dem Start der Titel "StateV Roleplay | Mein Text" als
- * Grundtitel durchgegangen und beim naechsten Wechsel stuende dort
- * "Corleone City | StateV Roleplay | Mein Text".
+ * Ohne das waere nach dem Start der Titel "Server A | Mein Text" als Grundtitel
+ * durchgegangen und beim naechsten Wechsel stuende dort
+ * "Server B | Server A | Mein Text".
  */
 void SmartContextManager::uebernimmLiveTitel(const QString &liveTitel)
 {

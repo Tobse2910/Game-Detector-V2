@@ -712,7 +712,7 @@ obs_data_array_t *ConfigManager::createDefaultSmartContextRules()
 
 	// Games / explicit category rules.
 	// Games. The wildcards matter: the shipped executables are rarely what you
-	// would guess (WardogsClient-Win64-Shipping.exe, FiveM_b3095_GTAProcess.exe).
+	// would guess (FiveM_b3570_GTAProcess.exe, Elgato.WaveLink.exe).
 	// Bei FiveM ist die Kategorie immer dieselbe, interessant ist der Server.
 	// {server} liest ihn aus den Angaben, die FiveM beim Verbinden ablegt, und
 	// steht am Anfang des Titels. {titel} ist der eigene Titel des Nutzers, so
