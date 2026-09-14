@@ -133,6 +133,7 @@ GameDetectorSettingsDialog::GameDetectorSettingsDialog(QWidget *parent) : QDialo
 	actionComboBox = new QComboBox();
 	actionComboBox->addItem(obs_module_text("Settings.PlatformAction.SendCommand"), 0);
 	actionComboBox->addItem(obs_module_text("Settings.PlatformAction.ChangeCategory"), 1);
+	actionComboBox->setToolTip(obs_module_text("Settings.PlatformAction.Tooltip"));
 	actionComboBoxLayout->addWidget(actionComboBox);
 
 	unifiedAuthCheckbox = new QCheckBox(obs_module_text("Settings.UnifiedAuth"));
@@ -140,6 +141,8 @@ GameDetectorSettingsDialog::GameDetectorSettingsDialog(QWidget *parent) : QDialo
 	actionComboBoxLayout->addWidget(unifiedAuthCheckbox);
 	autoUpdateOnlyWhileStreamingCheckbox =
 		new QCheckBox(obs_module_text("Settings.AutoUpdateOnlyWhileStreaming"));
+	autoUpdateOnlyWhileStreamingCheckbox->setToolTip(
+		obs_module_text("Settings.AutoUpdateOnlyWhileStreaming.Tooltip"));
 	actionComboBoxLayout->addWidget(autoUpdateOnlyWhileStreamingCheckbox);
 
 	QFormLayout *actionLayout = new QFormLayout();
@@ -148,11 +151,15 @@ GameDetectorSettingsDialog::GameDetectorSettingsDialog(QWidget *parent) : QDialo
 	commandLabel = new QLabel(obs_module_text("Settings.Command.GameDetected"));
 	commandInput = new QLineEdit();
 	commandInput->setPlaceholderText(obs_module_text("Settings.Command.GameDetected.Placeholder"));
+	commandInput->setToolTip(obs_module_text("Settings.Command.Tooltip"));
+	commandLabel->setToolTip(obs_module_text("Settings.Command.Tooltip"));
 	actionLayout->addRow(commandLabel, commandInput);
 
 	noGameCommandLabel = new QLabel(obs_module_text("Settings.Command.NoGame"));
 	noGameCommandInput = new QLineEdit();
 	noGameCommandInput->setPlaceholderText(obs_module_text("Settings.Command.NoGame.Placeholder"));
+	noGameCommandInput->setToolTip(obs_module_text("Settings.Command.NoGame.Tooltip"));
+	noGameCommandLabel->setToolTip(obs_module_text("Settings.Command.NoGame.Tooltip"));
 	actionLayout->addRow(noGameCommandLabel, noGameCommandInput);
 
 	QHBoxLayout *delayLayout = new QHBoxLayout();
@@ -160,6 +167,8 @@ GameDetectorSettingsDialog::GameDetectorSettingsDialog(QWidget *parent) : QDialo
 	delaySpinBox = new QSpinBox();
 	delaySpinBox->setRange(5, 300);
 	delaySpinBox->setSuffix(obs_module_text("Settings.Seconds"));
+	delaySpinBox->setToolTip(obs_module_text("Settings.ActionDelay.Tooltip"));
+	delayLabel->setToolTip(obs_module_text("Settings.ActionDelay.Tooltip"));
 	actionLayout->addRow(delayLabel, delaySpinBox);
 
 	announceChatCheckbox = new QCheckBox(obs_module_text("SmartContext.Announce"));
@@ -168,6 +177,7 @@ GameDetectorSettingsDialog::GameDetectorSettingsDialog(QWidget *parent) : QDialo
 
 	announceMessageInput = new QLineEdit();
 	announceMessageInput->setPlaceholderText(obs_module_text("SmartContext.Announce.Placeholder"));
+	announceMessageInput->setToolTip(obs_module_text("SmartContext.Announce.Message.Tooltip"));
 	actionLayout->addRow(obs_module_text("SmartContext.Announce.Message"), announceMessageInput);
 	connect(announceChatCheckbox, &QCheckBox::toggled, announceMessageInput, &QLineEdit::setEnabled);
 

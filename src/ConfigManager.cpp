@@ -35,7 +35,7 @@ void ConfigManager::load()
 		obs_data_set_bool(settings, SCAN_UBISOFT_KEY, true);
 		obs_data_set_bool(settings, SCAN_ON_STARTUP_KEY, true);
 		obs_data_set_bool(settings, SCAN_PERIODICALLY_KEY, false);
-		obs_data_set_int(settings, SCAN_PERIODICALLY_INTERVAL_KEY, 60);
+		obs_data_set_int(settings, SCAN_PERIODICALLY_INTERVAL_KEY, 20);
 		obs_data_set_string(settings, TWITCH_CHANNEL_LOGIN_KEY, "");
 		obs_data_set_int(settings, ACTION_DELAY_KEY, 30);
 
@@ -121,7 +121,7 @@ void ConfigManager::load()
 		obs_data_set_bool(settings, SCAN_PERIODICALLY_KEY, false);
 
 	if (!obs_data_has_user_value(settings, SCAN_PERIODICALLY_INTERVAL_KEY))
-		obs_data_set_int(settings, SCAN_PERIODICALLY_INTERVAL_KEY, 60);
+		obs_data_set_int(settings, SCAN_PERIODICALLY_INTERVAL_KEY, 20);
 
 	if (!obs_data_has_user_value(settings, TWITCH_CHANNEL_LOGIN_KEY))
 		obs_data_set_string(settings, TWITCH_CHANNEL_LOGIN_KEY, "");
@@ -713,7 +713,6 @@ obs_data_array_t *ConfigManager::createDefaultSmartContextRules()
 	// Games / explicit category rules.
 	// Games. The wildcards matter: the shipped executables are rarely what you
 	// would guess (WardogsClient-Win64-Shipping.exe, FiveM_b3095_GTAProcess.exe).
-	pushRule(rules, makeRule("Wardogs*.exe", "WARDOGS", NO_TITLE, false, 50));
 	// Bei FiveM ist die Kategorie immer dieselbe, interessant ist der Server.
 	// {server} liest ihn aus den Angaben, die FiveM beim Verbinden ablegt, und
 	// steht am Anfang des Titels. {titel} ist der eigene Titel des Nutzers, so

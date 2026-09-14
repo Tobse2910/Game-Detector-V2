@@ -476,10 +476,8 @@ void GameDetectorDock::buildSmartContextUi(QVBoxLayout *mainLayout)
 	fallbackCategoryCombo->setEditable(true);
 	fallbackCategoryCombo->addItem("Just Chatting");
 	fallbackCategoryCombo->addItem("IRL");
-	fallbackCategoryCombo->addItem("Special Events");
 	fallbackCategoryCombo->addItem("Music");
-	fallbackCategoryCombo->addItem("Art");
-	fallbackCategoryCombo->addItem("Software and Game Development");
+	fallbackCategoryCombo->addItem("Special Events");
 	fallbackCategoryCombo->setToolTip(obs_module_text("SmartContext.Fallback.Category.Tooltip"));
 	fallbackLayout->addWidget(fallbackCategoryCombo, 1);
 	smartLayout->addLayout(fallbackLayout);
